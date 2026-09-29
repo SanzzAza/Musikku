@@ -22,6 +22,7 @@ import java.util.concurrent.TimeUnit
 object StreamResolver {
 
     private const val TTL_MS = 60 * 60 * 1000L // URL YouTube berlaku ± 6 jam, kita refresh tiap 1 jam
+    private const val MAX_CACHE = 100
 
     private val client = OkHttpClient.Builder()
         .connectTimeout(15, TimeUnit.SECONDS)
@@ -51,6 +52,8 @@ object StreamResolver {
             .maxByOrNull { it.averageBitrate }
             ?.content
             ?: throw IOException("Audio tidak tersedia untuk $videoId")
+        // Batasi ukuran cache: dipakai berlama-lama, cache tanpa batas memakan memori
+        if (cache.size >= MAX_CACHE) cache.clear()
         cache[videoId] = url to System.currentTimeMillis()
         return url
     }

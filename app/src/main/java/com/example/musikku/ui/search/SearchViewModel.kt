@@ -27,6 +27,10 @@ data class SearchUiState(
     val loading: Boolean = false,
     val error: String? = null,
     val searched: Boolean = false,
+    /** Kata kunci dari hasil yang sedang ditampilkan (null = belum pernah mencari). */
+    val searchedQuery: String? = null,
+    /** Saran kata kunci saat mengetik. */
+    val suggestions: List<String> = emptyList(),
     val songs: List<SongItem> = emptyList(),
     val artists: List<ArtistItem> = emptyList(),
     val albums: List<AlbumItem> = emptyList(),
@@ -39,17 +43,29 @@ class SearchViewModel : ViewModel() {
     val state: StateFlow<SearchUiState> = _state.asStateFlow()
 
     private var searchJob: Job? = null
+    private var suggestionsJob: Job? = null
 
-    /** Dipanggil setiap user mengetik. Pencarian jalan 500ms setelah berhenti mengetik. */
+    /** Dipanggil setiap user mengetik. Saran muncul cepat, pencarian jalan 600ms setelah berhenti mengetik. */
     fun onQueryChange(query: String) {
         _state.update { it.copy(query = query) }
         searchJob?.cancel()
+        suggestionsJob?.cancel()
         if (query.isBlank()) {
             _state.update { SearchUiState(tab = it.tab) }
             return
         }
+        // Saran kata kunci dimuat lebih dulu supaya responsif…
+        suggestionsJob = viewModelScope.launch {
+            delay(250)
+            val suggestions = runCatching { yt.suggestions(query.trim()) }.getOrDefault(emptyList())
+            // Tampilkan hanya kalau user masih di kata kunci yang sama dan hasil pencarian belum menggantikan
+            if (_state.value.query.trim() == query.trim() && _state.value.searchedQuery != query.trim()) {
+                _state.update { it.copy(suggestions = suggestions) }
+            }
+        }
+        // …hasil pencarian menyusul setelah user berhenti mengetik
         searchJob = viewModelScope.launch {
-            delay(500)
+            delay(600)
             search(query.trim())
         }
     }
@@ -57,14 +73,19 @@ class SearchViewModel : ViewModel() {
     fun searchNow(query: String = _state.value.query) {
         if (query.isBlank()) return
         _state.update { it.copy(query = query) }
+        // Rekam ke riwayat: hanya pencarian eksplisit (submit keyboard / tap saran / tap
+        // kategori), bukan pencarian otomatis sambil mengetik, supaya riwayat tidak
+        // penuh kata kunci setengah ketik seperti "tul", "tulus…
+        AppModule.searchHistory.add(query)
         searchJob?.cancel()
+        suggestionsJob?.cancel()
         searchJob = viewModelScope.launch { search(query.trim()) }
     }
 
     fun onTabSelected(tab: SearchTab) = _state.update { it.copy(tab = tab) }
 
     private suspend fun search(q: String) {
-        _state.update { it.copy(loading = true, error = null) }
+        _state.update { it.copy(loading = true, error = null, suggestions = emptyList()) }
         try {
             coroutineScope {
                 val songs = async { runCatching { yt.search(q, SearchFilter.SONGS) }.getOrNull() }
@@ -80,10 +101,13 @@ class SearchViewModel : ViewModel() {
                     it.copy(
                         loading = false,
                         searched = true,
-                        songs = s.orEmpty().filterIsInstance<SongItem>(),
-                        artists = a.orEmpty().filterIsInstance<ArtistItem>(),
-                        albums = al.orEmpty().filterIsInstance<AlbumItem>(),
-                        playlists = p.orEmpty().filterIsInstance<AlbumItem>(),
+                        searchedQuery = q,
+                        // distinctBy: hasil pencarian bisa memuat videoId yang sama dua kali
+                        // (mis. lagu muncul di album dan single) → key duplikat bikin crash di LazyColumn
+                        songs = s.orEmpty().filterIsInstance<SongItem>().distinctBy { it.id },
+                        artists = a.orEmpty().filterIsInstance<ArtistItem>().distinctBy { it.id },
+                        albums = al.orEmpty().filterIsInstance<AlbumItem>().distinctBy { it.id },
+                        playlists = p.orEmpty().filterIsInstance<AlbumItem>().distinctBy { it.id },
                     )
                 }
             }

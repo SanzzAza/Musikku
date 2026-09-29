@@ -87,12 +87,22 @@ fun CollectionScreen(
                         )
                     }
                 }
-                item {
-                    PlayShuffleButtons(
-                        onPlay = { onPlaySongs(page.songs, 0) },
-                        onShuffle = { onShuffle(page.songs) },
-                        modifier = Modifier.padding(vertical = 8.dp)
-                    )
+                if (page.songs.isNotEmpty()) {
+                    item {
+                        PlayShuffleButtons(
+                            onPlay = { onPlaySongs(page.songs, 0) },
+                            onShuffle = { onShuffle(page.songs) },
+                            modifier = Modifier.padding(vertical = 8.dp)
+                        )
+                    }
+                } else {
+                    item {
+                        Text(
+                            "Playlist ini kosong.",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+                        )
+                    }
                 }
                 itemsIndexed(page.songs, key = { i, s -> "$i-${s.id}" }) { i, song ->
                     SongRow(

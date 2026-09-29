@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
 import androidx.compose.foundation.lazy.grid.itemsIndexed
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -61,7 +62,9 @@ fun SectionView(
         }
     } else {
         LazyRow(contentPadding = PaddingValues(horizontal = 10.dp)) {
-            items(section.items, key = { "${section.title}-${it.id}" }) { item ->
+            // Key menyertakan index: carousel YT Music kadang memuat item yang sama dua kali,
+            // dan key duplikat membuat LazyRow crash (IllegalArgumentException).
+            itemsIndexed(section.items, key = { i, item -> "${section.title}-$i-${item.id}" }) { _, item ->
                 ItemCard(item, onClick = { onOpenItem(item) })
             }
         }

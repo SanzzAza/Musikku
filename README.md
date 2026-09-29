@@ -5,7 +5,7 @@ Aplikasi streaming musik ala Spotify / YouTube Music — **lagu diputar full** (
 ## ✨ Fitur
 - **Katalog lengkap YouTube Music** — artis Indonesia & internasional (Last Child, Tulus, Dewa 19, dll)
 - **Beranda**: Trending di Indonesia, tangga lagu, artis teratas, rilisan baru, playlist pilihan
-- **Cari**: lagu, artis, album, dan playlist
+- **Cari**: lagu, artis, album, dan playlist — dengan saran kata kunci saat mengetik & riwayat pencarian
 - **Halaman Artis** ala YT Music: lagu teratas, album, single & EP, video, playlist, artis serupa
 - **Album & Playlist**: daftar lagu lengkap, putar / acak
 - **Radio otomatis**: putar satu lagu → antrian diisi lagu serupa (seperti YT Music)

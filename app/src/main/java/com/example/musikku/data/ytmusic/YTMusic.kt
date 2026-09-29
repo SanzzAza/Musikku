@@ -126,7 +126,10 @@ class YTMusic(
     suspend fun artist(browseId: String): ArtistPage {
         val d = browse(browseId)
         val header = d.obj("header")?.let { h ->
-            h.obj("musicImmersiveHeaderRenderer") ?: h.obj("musicVisualHeaderRenderer") ?: h.entrySet().firstOrNull()?.value?.asJsonObject
+            // as? JsonObject: field pertama header tidak selalu object (kalau YouTube menambah
+            // field baru, cast paksa asJsonObject bikin crash)
+            h.obj("musicImmersiveHeaderRenderer") ?: h.obj("musicVisualHeaderRenderer")
+                ?: h.entrySet().firstOrNull()?.value as? JsonObject
         }
         val name = text(header.obj("title"))
         val subs = text(path(header, "subscriptionButton", "subscribeButtonRenderer", "subscriberCountText"))

@@ -71,15 +71,42 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
     private var controller: MediaController? = null
     private val controllerFuture: ListenableFuture<MediaController>
 
-    /** Objek SongItem lengkap berdasarkan videoId. */
-    private val songCache = mutableMapOf<String, SongItem>()
+    /**
+     * Perintah yang menunggu MediaController siap. Tanpa ini, tap lagu pada
+     * sepersekian detik pertama setelah app dibuka akan hilang diam-diam
+     * karena controller belum terhubung ke service.
+     */
+    private var pendingAction: ((MediaController) -> Unit)? = null
+
+    /** Berapa lagu berurutan yang gagal diputar (untuk menghentikan auto-skip tanpa batas). */
+    private var consecutiveErrors = 0
+
+    /** Objek SongItem lengkap berdasarkan videoId (dibatasi agar tidak membesar tanpa batas). */
+    private val songCache = object : LinkedHashMap<String, SongItem>(32, 0.75f, false) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, SongItem>?): Boolean = size > MAX_CACHE
+    }
 
     private val listener = object : Player.Listener {
-        override fun onEvents(player: Player, events: Player.Events) = syncState()
+        override fun onEvents(player: Player, events: Player.Events) {
+            if (player.playbackState == Player.STATE_READY) consecutiveErrors = 0
+            // Playback sudah pulih → hapus pesan error lama supaya tidak terus menempel
+            if (player.isPlaying) _state.update { if (it.error != null) it.copy(error = null) else it }
+            syncState()
+        }
+
         override fun onPlayerError(error: PlaybackException) {
-            _state.update { it.copy(error = "Gagal memutar lagu ini (${error.errorCodeName})") }
-            // Lewati ke lagu berikutnya kalau ada
-            controller?.let { c -> if (c.hasNextMediaItem()) { c.seekToNextMediaItem(); c.prepare(); c.play() } }
+            val c = controller
+            consecutiveErrors++
+            // Lewati ke lagu berikutnya kalau ada — tapi berhenti setelah beberapa kegagalan
+            // beruntun supaya tidak "terbang" melewati seluruh antrian ketika YouTube berubah
+            // atau koneksi mati total.
+            if (c != null && c.hasNextMediaItem() && consecutiveErrors < MAX_CONSECUTIVE_ERRORS) {
+                c.seekToNextMediaItem()
+                c.prepare()
+                c.play()
+            } else {
+                _state.update { it.copy(error = "Gagal memutar lagu ini (${error.errorCodeName})") }
+            }
         }
     }
 
@@ -87,8 +114,13 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
         val token = SessionToken(app, ComponentName(app, PlaybackService::class.java))
         controllerFuture = MediaController.Builder(app, token).buildAsync()
         controllerFuture.addListener({
-            controller = controllerFuture.get().also { it.addListener(listener) }
+            val c = runCatching { controllerFuture.get() }.getOrNull() ?: return@addListener
+            controller = c.also { it.addListener(listener) }
             syncState()
+            // Jalankan perintah yang sempat menunggu controller siap
+            val pending = pendingAction
+            pendingAction = null
+            if (pending != null) pending(c)
         }, ContextCompat.getMainExecutor(app))
 
         // Update posisi progress bar & lirik
@@ -106,42 +138,61 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /** Jalankan [action] sekarang kalau controller sudah siap; kalau belum, simpan dan jalankan begitu siap. */
+    private fun whenReady(action: (MediaController) -> Unit) {
+        val c = controller
+        if (c != null) action(c) else pendingAction = action
+    }
+
     /** Putar daftar lagu (album, playlist, lagu teratas) mulai dari [startIndex]. */
     fun play(songs: List<SongItem>, startIndex: Int = 0) {
-        val c = controller ?: return
         if (songs.isEmpty()) return
         radioJob?.cancel()
-        songs.forEach { songCache[it.id] = it }
-        c.shuffleModeEnabled = false
-        c.setMediaItems(songs.map { it.toMediaItem() }, startIndex.coerceIn(0, songs.lastIndex), 0L)
-        c.prepare()
-        c.play()
-        _state.update { it.copy(error = null) }
+        whenReady { c ->
+            songs.forEach { songCache[it.id] = it }
+            c.shuffleModeEnabled = false
+            c.setMediaItems(songs.map { it.toMediaItem() }, startIndex.coerceIn(0, songs.lastIndex), 0L)
+            c.prepare()
+            c.play()
+            _state.update { it.copy(error = null) }
+        }
     }
 
     /** Putar satu lagu lalu isi antrian otomatis dengan lagu serupa (radio ala YT Music). */
     fun playWithRadio(song: SongItem) {
-        play(listOf(song))
-        radioJob = viewModelScope.launch {
-            val related = runCatching { AppModule.ytMusic.radio(song.id) }.getOrDefault(emptyList())
-                .filter { it.id != song.id }
-            val c = controller ?: return@launch
-            if (related.isEmpty() || c.currentMediaItem?.mediaId != song.id) return@launch
-            related.forEach { songCache[it.id] = it }
-            c.addMediaItems(related.map { it.toMediaItem() })
+        radioJob?.cancel()
+        whenReady { c ->
+            songCache[song.id] = song
+            c.shuffleModeEnabled = false
+            c.setMediaItems(listOf(song.toMediaItem()), 0, 0L)
+            c.prepare()
+            c.play()
+            _state.update { it.copy(error = null) }
+            radioJob = viewModelScope.launch { fillRadioQueue(song) }
         }
+    }
+
+    private suspend fun fillRadioQueue(song: SongItem) {
+        val related = runCatching { AppModule.ytMusic.radio(song.id) }.getOrDefault(emptyList())
+            .filter { it.id != song.id }
+        val c = controller ?: return
+        if (related.isEmpty() || c.currentMediaItem?.mediaId != song.id) return
+        related.forEach { songCache[it.id] = it }
+        c.addMediaItems(related.map { it.toMediaItem() })
     }
 
     /** Putar acak. */
     fun shuffle(songs: List<SongItem>) {
-        val c = controller ?: return
         if (songs.isEmpty()) return
         radioJob?.cancel()
-        songs.forEach { songCache[it.id] = it }
-        c.setMediaItems(songs.map { it.toMediaItem() }, songs.indices.random(), 0L)
-        c.shuffleModeEnabled = true
-        c.prepare()
-        c.play()
+        whenReady { c ->
+            songs.forEach { songCache[it.id] = it }
+            c.setMediaItems(songs.map { it.toMediaItem() }, songs.indices.random(), 0L)
+            c.shuffleModeEnabled = true
+            c.prepare()
+            c.play()
+            _state.update { it.copy(error = null) }
+        }
     }
 
     fun togglePlayPause() {
@@ -154,7 +205,16 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     fun next() { controller?.seekToNext() }
-    fun previous() { controller?.seekToPrevious() }
+
+    /**
+     * Ala Spotify: kalau lagu sudah jalan lebih dari 3 detik, mulai ulang dari awal;
+     * kalau tidak, kembali ke lagu sebelumnya. (Sebelumnya selalu lompat ke lagu
+     * sebelumnya walau posisinya sudah menengah lagu.)
+     */
+    fun previous() {
+        val c = controller ?: return
+        if (c.currentPosition > 3000) c.seekTo(0L) else c.seekToPrevious()
+    }
 
     fun seekTo(positionMs: Long) {
         controller?.seekTo(positionMs)
@@ -226,9 +286,15 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     override fun onCleared() {
+        pendingAction = null
         controller?.removeListener(listener)
         MediaController.releaseFuture(controllerFuture)
         super.onCleared()
+    }
+
+    private companion object {
+        const val MAX_CONSECUTIVE_ERRORS = 3
+        const val MAX_CACHE = 500
     }
 }
 

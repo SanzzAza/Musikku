@@ -6,11 +6,14 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
@@ -22,6 +25,8 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -43,9 +48,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.musikku.AppModule
 import com.example.musikku.data.ytmusic.SongItem
 import com.example.musikku.ui.components.ErrorBox
 import com.example.musikku.ui.components.ListItemRow
@@ -75,6 +82,7 @@ fun SearchScreen(
     vm: SearchViewModel = viewModel(),
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
+    val history by AppModule.searchHistory.queries.collectAsStateWithLifecycle()
     val focus = LocalFocusManager.current
 
     Column(Modifier.fillMaxSize().statusBarsPadding()) {
@@ -117,7 +125,20 @@ fun SearchScreen(
         )
 
         if (state.query.isBlank()) {
-            BrowseGrid(onCategoryClick = { vm.searchNow(it); focus.clearFocus() })
+            BrowseGrid(
+                history = history,
+                onHistoryClick = { vm.searchNow(it); focus.clearFocus() },
+                onHistoryRemove = { AppModule.searchHistory.remove(it) },
+                onClearHistory = { AppModule.searchHistory.clear() },
+                onCategoryClick = { vm.searchNow(it); focus.clearFocus() },
+            )
+            return@Column
+        }
+
+        // Saran kata kunci tampil selagi mengetik; begitu pencarian selesai diganti hasil.
+        val showSuggestions = state.suggestions.isNotEmpty() && state.searchedQuery != state.query.trim()
+        if (showSuggestions) {
+            SuggestionsList(state.suggestions, onClick = { vm.searchNow(it); focus.clearFocus() })
             return@Column
         }
 
@@ -215,18 +236,79 @@ private fun EmptyResult(query: String) {
     }
 }
 
+/** Daftar saran kata kunci ala YouTube Music — tap untuk langsung mencari. */
 @Composable
-private fun BrowseGrid(onCategoryClick: (String) -> Unit) {
+private fun SuggestionsList(suggestions: List<String>, onClick: (String) -> Unit) {
+    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(vertical = 8.dp)) {
+        items(suggestions, key = { it }) { text ->
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .clickable { onClick(text) }
+                    .padding(horizontal = 20.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(Icons.Default.Search, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                Spacer(Modifier.width(12.dp))
+                Text(text, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+        }
+    }
+}
+
+@Composable
+private fun BrowseGrid(
+    history: List<String>,
+    onHistoryClick: (String) -> Unit,
+    onHistoryRemove: (String) -> Unit,
+    onClearHistory: () -> Unit,
+    onCategoryClick: (String) -> Unit,
+) {
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
         contentPadding = PaddingValues(16.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        item(span = { GridItemSpan(maxLineSpan) }) {
-            Text("Jelajahi semua", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        if (history.isNotEmpty()) {
+            item(span = { GridItemSpan(maxLineSpan) }, key = "history-header") {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        "Pencarian terakhir",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Text(
+                        "Hapus semua",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(50))
+                            .clickable(onClick = onClearHistory)
+                            .padding(horizontal = 10.dp, vertical = 6.dp)
+                    )
+                }
+            }
+            history.forEach { query ->
+                item(span = { GridItemSpan(maxLineSpan) }, key = "history-$query") {
+                    HistoryRow(
+                        query = query,
+                        onClick = { onHistoryClick(query) },
+                        onRemove = { onHistoryRemove(query) },
+                    )
+                }
+            }
         }
-        items(browseCategories) { (name, color) ->
+        item(span = { GridItemSpan(maxLineSpan) }, key = "browse-header") {
+            Text(
+                "Jelajahi semua",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                modifier = if (history.isNotEmpty()) Modifier.padding(top = 12.dp) else Modifier
+            )
+        }
+        items(browseCategories, key = { it.first }) { (name, color) ->
             Box(
                 Modifier
                     .height(96.dp)
@@ -237,6 +319,31 @@ private fun BrowseGrid(onCategoryClick: (String) -> Unit) {
             ) {
                 Text(name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color.White)
             }
+        }
+    }
+}
+
+/** Satu baris riwayat pencarian: ikon jam, kata kunci, tombol hapus. */
+@Composable
+private fun HistoryRow(query: String, onClick: () -> Unit, onRemove: () -> Unit) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(8.dp))
+            .clickable(onClick = onClick)
+            .padding(vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(Icons.Default.History, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        Spacer(Modifier.width(12.dp))
+        Text(
+            query,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f)
+        )
+        IconButton(onClick = onRemove) {
+            Icon(Icons.Default.Close, "Hapus dari riwayat", tint = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
