@@ -1,0 +1,213 @@
+package com.example.musikku.ui.player
+
+import android.os.Build
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Repeat
+import androidx.compose.material.icons.filled.RepeatOne
+import androidx.compose.material.icons.filled.Shuffle
+import androidx.compose.material.icons.filled.SkipNext
+import androidx.compose.material.icons.filled.SkipPrevious
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.media3.common.Player
+import coil.compose.AsyncImage
+import com.example.musikku.player.NowPlaying
+import com.example.musikku.ui.components.Artwork
+import com.example.musikku.ui.components.formatMs
+
+@Composable
+fun PlayerScreen(
+    state: NowPlaying,
+    isFavorite: Boolean,
+    onCollapse: () -> Unit,
+    onPlayPause: () -> Unit,
+    onNext: () -> Unit,
+    onPrevious: () -> Unit,
+    onSeek: (Long) -> Unit,
+    onToggleShuffle: () -> Unit,
+    onCycleRepeat: () -> Unit,
+    onToggleFavorite: () -> Unit,
+    onArtistClick: (Long) -> Unit,
+) {
+    val track = state.track
+    val cover = track?.album?.coverXl ?: track?.album?.coverMedium
+
+    Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+        // Latar blur dari cover album (blur butuh Android 12+, di bawahnya hanya gelap)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            AsyncImage(
+                model = cover, contentDescription = null, contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize().blur(60.dp)
+            )
+        }
+        Box(
+            Modifier.fillMaxSize().background(
+                Brush.verticalGradient(
+                    listOf(Color.Black.copy(alpha = 0.45f), MaterialTheme.colorScheme.background)
+                )
+            )
+        )
+
+        Column(
+            Modifier.fillMaxSize().systemBarsPadding().padding(horizontal = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onCollapse) {
+                    Icon(Icons.Default.KeyboardArrowDown, "Tutup", Modifier.size(32.dp))
+                }
+                Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("SEDANG DIPUTAR", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Text(
+                        track?.album?.title.orEmpty(), maxLines = 1, overflow = TextOverflow.Ellipsis,
+                        style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold
+                    )
+                }
+                Spacer(Modifier.size(48.dp))
+            }
+
+            Spacer(Modifier.weight(1f))
+            Artwork(cover, Modifier.fillMaxWidth().aspectRatio(1f), shape = RoundedCornerShape(10.dp))
+            Spacer(Modifier.weight(1f))
+
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        track?.title.orEmpty(), style = MaterialTheme.typography.titleLarge,
+                        maxLines = 1, overflow = TextOverflow.Ellipsis
+                    )
+                    Text(
+                        track?.artist?.name.orEmpty(),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1, overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.clickable {
+                            track?.artist?.id?.takeIf { it > 0 }?.let(onArtistClick)
+                        }
+                    )
+                }
+                IconButton(onClick = onToggleFavorite) {
+                    Icon(
+                        if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                        "Suka",
+                        tint = if (isFavorite) MaterialTheme.colorScheme.primary else Color.White,
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
+            }
+
+            // Seek bar — nilai lokal saat digeser supaya tidak "loncat-loncat"
+            var dragValue by remember { mutableStateOf<Float?>(null) }
+            val duration = state.durationMs.coerceAtLeast(1L)
+            Slider(
+                value = dragValue ?: state.progress,
+                onValueChange = { dragValue = it },
+                onValueChangeFinished = {
+                    dragValue?.let { onSeek((it * duration).toLong()) }
+                    dragValue = null
+                },
+                colors = SliderDefaults.colors(
+                    thumbColor = Color.White,
+                    activeTrackColor = Color.White,
+                    inactiveTrackColor = Color.White.copy(alpha = 0.25f)
+                ),
+                modifier = Modifier.padding(top = 12.dp)
+            )
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                val shownPos = dragValue?.let { (it * duration).toLong() } ?: state.positionMs
+                Text(formatMs(shownPos), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(formatMs(state.durationMs), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+
+            Row(
+                Modifier.fillMaxWidth().padding(vertical = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onToggleShuffle) {
+                    Icon(
+                        Icons.Default.Shuffle, "Acak",
+                        tint = if (state.shuffle) MaterialTheme.colorScheme.primary else Color.White
+                    )
+                }
+                IconButton(onClick = onPrevious, modifier = Modifier.size(56.dp)) {
+                    Icon(Icons.Default.SkipPrevious, "Sebelumnya", Modifier.size(40.dp))
+                }
+                FilledIconButton(
+                    onClick = onPlayPause,
+                    modifier = Modifier.size(72.dp),
+                    colors = IconButtonDefaults.filledIconButtonColors(
+                        containerColor = Color.White, contentColor = Color.Black
+                    )
+                ) {
+                    if (state.isBuffering) {
+                        CircularProgressIndicator(Modifier.size(28.dp), color = Color.Black, strokeWidth = 3.dp)
+                    } else {
+                        Icon(
+                            if (state.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                            if (state.isPlaying) "Jeda" else "Putar",
+                            Modifier.size(40.dp)
+                        )
+                    }
+                }
+                IconButton(onClick = onNext, enabled = state.hasNext, modifier = Modifier.size(56.dp)) {
+                    Icon(Icons.Default.SkipNext, "Berikutnya", Modifier.size(40.dp))
+                }
+                IconButton(onClick = onCycleRepeat) {
+                    Icon(
+                        if (state.repeatMode == Player.REPEAT_MODE_ONE) Icons.Default.RepeatOne else Icons.Default.Repeat,
+                        "Ulangi",
+                        tint = if (state.repeatMode != Player.REPEAT_MODE_OFF) MaterialTheme.colorScheme.primary else Color.White
+                    )
+                }
+            }
+
+            Text(
+                state.error ?: "Preview 30 detik • Sumber: Deezer",
+                style = MaterialTheme.typography.bodySmall,
+                color = if (state.error != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+        }
+    }
+}
