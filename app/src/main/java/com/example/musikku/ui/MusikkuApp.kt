@@ -77,6 +77,7 @@ fun MusikkuApp(playerVm: PlayerViewModel = viewModel()) {
     val route = backStack?.destination?.route
     val now by playerVm.state.collectAsStateWithLifecycle()
     val liked by AppModule.favorites.items.collectAsStateWithLifecycle()
+    val lyrics by playerVm.lyrics.collectAsStateWithLifecycle()
     val currentId = now.track?.id
 
     // Izin notifikasi (Android 13+) untuk notifikasi kontrol musik
@@ -167,6 +168,8 @@ fun MusikkuApp(playerVm: PlayerViewModel = viewModel()) {
                         nav.popBackStack()
                         openArtist(id)
                     },
+                    lyrics = lyrics,
+                    onRetryLyrics = playerVm::retryLyrics,
                 )
             }
         }

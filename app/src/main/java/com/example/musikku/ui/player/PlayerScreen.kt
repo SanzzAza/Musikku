@@ -1,6 +1,19 @@
 package com.example.musikku.ui.player
 
 import android.os.Build
+import androidx.activity.compose.BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.runtime.saveable.rememberSaveable
+import com.example.musikku.player.LyricsUiState
+import com.example.musikku.ui.lyrics.FullLyrics
+import com.example.musikku.ui.lyrics.LyricsCardColor
+import com.example.musikku.ui.lyrics.LyricsPreviewCard
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -73,8 +86,12 @@ fun PlayerScreen(
     onCycleRepeat: () -> Unit,
     onToggleFavorite: () -> Unit,
     onArtistClick: (Long) -> Unit,
+    lyrics: LyricsUiState,
+    onRetryLyrics: () -> Unit,
 ) {
     val track = state.track
+    var showLyrics by rememberSaveable { mutableStateOf(false) }
+    BackHandler(enabled = showLyrics) { showLyrics = false }
     val cover = track?.album?.coverXl ?: track?.album?.coverMedium
 
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
@@ -93,8 +110,11 @@ fun PlayerScreen(
             )
         )
 
+        // Halaman pemutar bisa di-scroll ke bawah untuk melihat kartu lirik
+        LazyColumn(Modifier.fillMaxSize().systemBarsPadding()) {
+        item {
         Column(
-            Modifier.fillMaxSize().systemBarsPadding().padding(horizontal = 24.dp),
+            Modifier.fillParentMaxHeight(0.93f).padding(horizontal = 24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -234,6 +254,77 @@ fun PlayerScreen(
                 )
             }
             Spacer(Modifier.height(16.dp))
+        }
+        }
+        item {
+            LyricsPreviewCard(
+                state = lyrics,
+                positionMs = state.positionMs,
+                onExpand = { showLyrics = true },
+                onRetry = onRetryLyrics,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+            )
+        }
+        item { Spacer(Modifier.height(32.dp)) }
+        }
+
+        // Lirik layar penuh
+        val loaded = (lyrics as? LyricsUiState.Loaded)?.lyrics
+        AnimatedVisibility(
+            visible = showLyrics && loaded != null,
+            enter = slideInVertically { it } + fadeIn(),
+            exit = slideOutVertically { it } + fadeOut(),
+        ) {
+            Column(Modifier.fillMaxSize().background(LyricsCardColor).systemBarsPadding()) {
+                Row(
+                    Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(onClick = { showLyrics = false }) {
+                        Icon(Icons.Default.KeyboardArrowDown, "Tutup lirik", Modifier.size(32.dp))
+                    }
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            track?.title.orEmpty(), fontWeight = FontWeight.Bold,
+                            maxLines = 1, overflow = TextOverflow.Ellipsis
+                        )
+                        Text(
+                            track?.artist?.name.orEmpty(), style = MaterialTheme.typography.bodySmall,
+                            color = Color.White.copy(alpha = 0.7f), maxLines = 1, overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+                if (loaded != null) {
+                    FullLyrics(loaded, state.positionMs, onSeek, Modifier.weight(1f))
+                }
+                Column(Modifier.padding(horizontal = 24.dp, vertical = 12.dp)) {
+                    LinearProgressIndicator(
+                        progress = { state.progress },
+                        modifier = Modifier.fillMaxWidth().height(3.dp),
+                        color = Color.White,
+                        trackColor = Color.White.copy(alpha = 0.25f),
+                        drawStopIndicator = {},
+                    )
+                    Row(
+                        Modifier.fillMaxWidth().padding(top = 6.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(formatMs(state.positionMs), style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.7f))
+                        FilledIconButton(
+                            onClick = onPlayPause,
+                            modifier = Modifier.size(56.dp),
+                            colors = IconButtonDefaults.filledIconButtonColors(containerColor = Color.White, contentColor = Color.Black)
+                        ) {
+                            Icon(
+                                if (state.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                                if (state.isPlaying) "Jeda" else "Putar", Modifier.size(32.dp)
+                            )
+                        }
+                        Text(formatMs(state.durationMs), style = MaterialTheme.typography.bodySmall, color = Color.White.copy(alpha = 0.7f))
+                    }
+                }
+            }
         }
     }
 }

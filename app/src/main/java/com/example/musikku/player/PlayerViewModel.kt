@@ -16,6 +16,9 @@ import com.example.musikku.AppModule
 import com.example.musikku.data.model.Album
 import com.example.musikku.data.model.Artist
 import com.example.musikku.data.model.Track
+import com.example.musikku.data.lyrics.Lyrics
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
 import com.google.common.util.concurrent.ListenableFuture
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,6 +27,13 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+
+sealed interface LyricsUiState {
+    data object Idle : LyricsUiState
+    data object Loading : LyricsUiState
+    data object Error : LyricsUiState
+    data class Loaded(val lyrics: Lyrics) : LyricsUiState
+}
 
 data class NowPlaying(
     val track: Track? = null,
@@ -46,6 +56,11 @@ data class NowPlaying(
  * Di-scope ke Activity, jadi semua layar berbagi satu instance.
  */
 class PlayerViewModel(app: Application) : AndroidViewModel(app) {
+
+    private val _lyrics = MutableStateFlow<LyricsUiState>(LyricsUiState.Idle)
+    val lyrics: StateFlow<LyricsUiState> = _lyrics.asStateFlow()
+    private var lyricsJob: Job? = null
+    private var lyricsTrackId: Long? = null
 
     private val _state = MutableStateFlow(NowPlaying())
     val state: StateFlow<NowPlaying> = _state.asStateFlow()
@@ -84,7 +99,7 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
                         }
                     }
                 }
-                delay(500)
+                delay(250)
             }
         }
     }
@@ -146,6 +161,37 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /** Muat lirik untuk lagu yang sedang diputar (sekali per lagu). */
+    private fun loadLyricsFor(track: Track?) {
+        if (track == null || track.id == lyricsTrackId) return
+        lyricsTrackId = track.id
+        lyricsJob?.cancel()
+        _lyrics.value = LyricsUiState.Loading
+        lyricsJob = viewModelScope.launch {
+            _lyrics.value = try {
+                LyricsUiState.Loaded(
+                    AppModule.lyrics.getLyrics(
+                        trackId = track.id,
+                        title = track.title.orEmpty(),
+                        artist = track.artist?.name.orEmpty(),
+                        album = track.album?.title,
+                        durationSec = track.duration,
+                    )
+                )
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                lyricsTrackId = null // izinkan coba lagi
+                LyricsUiState.Error
+            }
+        }
+    }
+
+    fun retryLyrics() {
+        lyricsTrackId = null
+        loadLyricsFor(_state.value.track)
+    }
+
     fun toggleFavorite() {
         _state.value.track?.let { AppModule.favorites.toggle(it) }
     }
@@ -166,6 +212,7 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
                 repeatMode = c.repeatMode,
             )
         }
+        loadLyricsFor(_state.value.track)
     }
 
     override fun onCleared() {

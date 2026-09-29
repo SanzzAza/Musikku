@@ -9,6 +9,7 @@ Aplikasi streaming musik ala Spotify / YouTube Music — **lagu diputar full** (
 - **Halaman Album**: cover, daftar lagu, putar / acak
 - **Pemutar**: mini player + pemutar layar penuh (seek bar, next/prev, shuffle, repeat, suka)
 - **Putar di background** + notifikasi media & kontrol lockscreen (Media3 MediaSession)
+- **Lirik tersinkron** ala Spotify: kartu lirik di pemutar + mode layar penuh, auto-scroll, ketuk baris untuk lompat (sumber: [LRCLIB](https://lrclib.net))
 - **Koleksi**: lagu yang disukai tersimpan di perangkat
 - Pause otomatis saat headset dicabut, audio focus (berhenti saat ada telepon)
 

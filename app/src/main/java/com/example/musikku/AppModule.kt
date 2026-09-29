@@ -3,6 +3,7 @@ package com.example.musikku
 import android.content.Context
 import com.example.musikku.data.MusicRepository
 import com.example.musikku.data.local.FavoritesStore
+import com.example.musikku.data.lyrics.LyricsRepository
 import com.example.musikku.data.remote.DeezerApi
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
@@ -36,4 +37,6 @@ object AppModule {
     }
 
     val repository: MusicRepository by lazy { MusicRepository(api) }
+
+    val lyrics: LyricsRepository by lazy { LyricsRepository() }
 }
