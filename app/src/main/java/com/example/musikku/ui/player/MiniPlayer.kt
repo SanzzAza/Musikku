@@ -39,7 +39,7 @@ fun MiniPlayer(
     onNext: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val track = state.track ?: return
+    val song = state.song ?: return
     Column(
         modifier
             .padding(horizontal = 8.dp, vertical = 4.dp)
@@ -51,15 +51,15 @@ fun MiniPlayer(
             Modifier.fillMaxWidth().padding(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Artwork(track.album?.coverMedium, Modifier.size(42.dp), shape = RoundedCornerShape(4.dp))
+            Artwork(song.thumbnail, Modifier.size(42.dp), shape = RoundedCornerShape(4.dp))
             Spacer(Modifier.width(10.dp))
             Column(Modifier.weight(1f)) {
                 Text(
-                    track.title.orEmpty(), maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    song.title, maxLines = 1, overflow = TextOverflow.Ellipsis,
                     fontWeight = FontWeight.SemiBold, style = MaterialTheme.typography.bodyMedium
                 )
                 Text(
-                    track.artist?.name.orEmpty(), maxLines = 1, overflow = TextOverflow.Ellipsis,
+                    song.artistsText, maxLines = 1, overflow = TextOverflow.Ellipsis,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

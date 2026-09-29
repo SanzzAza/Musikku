@@ -32,15 +32,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.musikku.AppModule
-import com.example.musikku.data.model.Track
+import com.example.musikku.data.ytmusic.SongItem
 import com.example.musikku.ui.components.PlayShuffleButtons
-import com.example.musikku.ui.components.TrackRow
+import com.example.musikku.ui.components.SongRow
 
 @Composable
 fun LibraryScreen(
-    currentTrackId: Long?,
-    onPlay: (List<Track>, Int) -> Unit,
-    onShuffle: (List<Track>) -> Unit,
+    currentSongId: String?,
+    onPlay: (List<SongItem>, Int) -> Unit,
+    onShuffle: (List<SongItem>) -> Unit,
 ) {
     val liked by AppModule.favorites.items.collectAsStateWithLifecycle()
 
@@ -90,7 +90,7 @@ fun LibraryScreen(
                 }
             }
             itemsIndexed(liked, key = { _, t -> t.id }) { i, track ->
-                TrackRow(track = track, isCurrent = track.id == currentTrackId, onClick = { onPlay(liked, i) })
+                SongRow(song = track, isCurrent = track.id == currentSongId, onClick = { onPlay(liked, i) })
             }
         }
     }

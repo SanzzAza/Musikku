@@ -3,15 +3,16 @@
 Aplikasi streaming musik ala Spotify / YouTube Music — **lagu diputar full** (bukan preview).
 
 ## ✨ Fitur
-- **Beranda**: Lagu trending, artis populer, album populer (chart Deezer)
-- **Cari**: cari **lagu, artis, dan album** (auto-search saat mengetik, dengan debounce) + kategori jelajah
-- **Halaman Artis**: foto header, jumlah penggemar, lagu populer, diskografi, artis serupa
-- **Halaman Album**: cover, daftar lagu, putar / acak
-- **Pemutar**: mini player + pemutar layar penuh (seek bar, next/prev, shuffle, repeat, suka)
-- **Putar di background** + notifikasi media & kontrol lockscreen (Media3 MediaSession)
-- **Lirik tersinkron** ala Spotify: kartu lirik di pemutar + mode layar penuh, auto-scroll, ketuk baris untuk lompat (sumber: [LRCLIB](https://lrclib.net))
+- **Katalog lengkap YouTube Music** — artis Indonesia & internasional (Last Child, Tulus, Dewa 19, dll)
+- **Beranda**: Trending di Indonesia, tangga lagu, artis teratas, rilisan baru, playlist pilihan
+- **Cari**: lagu, artis, album, dan playlist
+- **Halaman Artis** ala YT Music: lagu teratas, album, single & EP, video, playlist, artis serupa
+- **Album & Playlist**: daftar lagu lengkap, putar / acak
+- **Radio otomatis**: putar satu lagu → antrian diisi lagu serupa (seperti YT Music)
+- **Lagu full** (bukan preview), kualitas audio tertinggi yang tersedia
+- **Lirik tersinkron** ala Spotify (sumber: [LRCLIB](https://lrclib.net))
+- **Putar di background** + notifikasi media & kontrol lockscreen
 - **Koleksi**: lagu yang disukai tersimpan di perangkat
-- Pause otomatis saat headset dicabut, audio focus (berhenti saat ada telepon)
 
 ## 🧱 Tech Stack
 | Bagian | Library |
@@ -19,30 +20,26 @@ Aplikasi streaming musik ala Spotify / YouTube Music — **lagu diputar full** (
 | UI | Jetpack Compose + Material 3 |
 | Arsitektur | MVVM (ViewModel + StateFlow) |
 | Navigasi | Navigation Compose |
-| Network | Retrofit + Gson |
-| Gambar | Coil |
+| Katalog musik | YouTube Music InnerTube API (`data/ytmusic/YTMusic.kt`) |
+| Audio stream | [NewPipe Extractor](https://github.com/TeamNewPipe/NewPipeExtractor) |
 | Player | AndroidX Media3 (ExoPlayer + MediaSessionService) |
-| Metadata (cari, chart, artis, album) | [Deezer API](https://developers.deezer.com/api) — gratis, tanpa API key |
-| Audio full | YouTube Music via [NewPipe Extractor](https://github.com/TeamNewPipe/NewPipeExtractor) |
+| Gambar | Coil |
+| Lirik | LRCLIB |
 
 ## 📁 Struktur
 ```
 app/src/main/java/com/example/musikku/
-├── AppModule.kt              # Service locator (Retrofit, repository, favorit)
-├── MainActivity.kt
+├── AppModule.kt                 # Service locator
 ├── data/
-│   ├── model/Models.kt       # Track, Artist, Album
-│   ├── remote/DeezerApi.kt   # Endpoint API
-│   ├── local/FavoritesStore.kt
-│   └── MusicRepository.kt
-├── player/
-│   ├── PlaybackService.kt    # ExoPlayer + MediaSession (background)
-│   └── PlayerViewModel.kt    # Kontrol player dari UI
-└── ui/
-    ├── MusikkuApp.kt         # Scaffold, bottom nav, NavHost
-    ├── home/  search/  artist/  album/  library/  player/
-    ├── components/           # TrackRow, AlbumCard, dll
-    └── theme/
+│   ├── ytmusic/
+│   │   ├── YTMusic.kt           # Beranda, cari, artis, album/playlist, radio
+│   │   ├── InnerTubeParser.kt   # Parser respons YouTube Music
+│   │   ├── StreamResolver.kt    # URL audio full (NewPipe)
+│   │   └── Models.kt            # SongItem, ArtistItem, AlbumItem, Section
+│   ├── lyrics/LyricsRepository.kt
+│   └── local/FavoritesStore.kt
+├── player/                      # PlaybackService + PlayerViewModel
+└── ui/                          # home, search, artist, collection, library, player, lyrics
 ```
 
 ## ▶️ Cara Menjalankan
@@ -50,13 +47,11 @@ app/src/main/java/com/example/musikku/
 2. Tunggu Gradle sync selesai (JDK 17).
 3. Jalankan di emulator / HP (Android 7.0+ / API 24).
 
-## 🎧 Cara Audio Full Bekerja
-1. Pencarian, chart, info artis & album diambil dari **Deezer** (datanya rapi + cover HD).
-2. Saat lagu diputar, `YouTubeAudioResolver` mencari lagu yang sama di **YouTube Music**
-   (kategori *Songs*), dicocokkan lewat **judul, artis, dan durasi**, lalu mengambil stream audio
-   kualitas tertinggi (Opus 160 kbps / M4A 128 kbps).
+## 🎧 Cara Kerja
+1. Semua data musik (beranda, pencarian, artis, album, playlist, radio) diambil langsung dari
+   **YouTube Music** lewat API internal yang sama dengan music.youtube.com — tanpa login / API key.
+2. Saat lagu diputar, `StreamResolver` mengambil URL audio kualitas tertinggi dari videoId lagu itu.
 3. Lagu berikutnya di antrian di-*prefetch* supaya perpindahan lagu mulus.
-4. Kalau YouTube gagal, otomatis fallback ke preview 30 detik Deezer.
 
 ## ⚠️ Catatan Penting
 - Mengambil audio dari YouTube melanggar ToS YouTube → aplikasi **tidak bisa masuk Play Store**;

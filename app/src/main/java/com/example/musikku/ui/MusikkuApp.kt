@@ -41,9 +41,12 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.musikku.AppModule
-import com.example.musikku.data.model.Track
+import com.example.musikku.data.ytmusic.AlbumItem
+import com.example.musikku.data.ytmusic.ArtistItem
+import com.example.musikku.data.ytmusic.SongItem
+import com.example.musikku.data.ytmusic.YTItem
 import com.example.musikku.player.PlayerViewModel
-import com.example.musikku.ui.album.AlbumScreen
+import com.example.musikku.ui.collection.CollectionScreen
 import com.example.musikku.ui.artist.ArtistScreen
 import com.example.musikku.ui.home.HomeScreen
 import com.example.musikku.ui.library.LibraryScreen
@@ -56,10 +59,10 @@ private object Routes {
     const val SEARCH = "search"
     const val LIBRARY = "library"
     const val ARTIST = "artist/{id}"
-    const val ALBUM = "album/{id}"
+    const val COLLECTION = "collection/{id}"
     const val PLAYER = "player"
-    fun artist(id: Long) = "artist/$id"
-    fun album(id: Long) = "album/$id"
+    fun artist(id: String) = "artist/$id"
+    fun collection(id: String) = "collection/$id"
 }
 
 private data class TabItem(val route: String, val label: String, val icon: ImageVector, val selectedIcon: ImageVector)
@@ -78,7 +81,7 @@ fun MusikkuApp(playerVm: PlayerViewModel = viewModel()) {
     val now by playerVm.state.collectAsStateWithLifecycle()
     val liked by AppModule.favorites.items.collectAsStateWithLifecycle()
     val lyrics by playerVm.lyrics.collectAsStateWithLifecycle()
-    val currentId = now.track?.id
+    val currentId = now.song?.id
 
     // Izin notifikasi (Android 13+) untuk notifikasi kontrol musik
     val permissionLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
@@ -88,10 +91,17 @@ fun MusikkuApp(playerVm: PlayerViewModel = viewModel()) {
         }
     }
 
-    val play: (List<Track>, Int) -> Unit = playerVm::play
-    val shuffle: (List<Track>) -> Unit = playerVm::shuffle
-    val openArtist: (Long) -> Unit = { nav.navigate(Routes.artist(it)) }
-    val openAlbum: (Long) -> Unit = { nav.navigate(Routes.album(it)) }
+    val play: (List<SongItem>, Int) -> Unit = playerVm::play
+    val shuffle: (List<SongItem>) -> Unit = playerVm::shuffle
+    val openArtist: (String) -> Unit = { nav.navigate(Routes.artist(it)) }
+    val openCollection: (String) -> Unit = { nav.navigate(Routes.collection(it)) }
+    val openItem: (YTItem) -> Unit = { item ->
+        when (item) {
+            is SongItem -> playerVm.playWithRadio(item)
+            is ArtistItem -> openArtist(item.id)
+            is AlbumItem -> openCollection(item.id)
+        }
+    }
 
     Scaffold(
         contentWindowInsets = WindowInsets(0),
@@ -118,30 +128,30 @@ fun MusikkuApp(playerVm: PlayerViewModel = viewModel()) {
             modifier = Modifier.padding(padding)
         ) {
             composable(Routes.HOME) {
-                HomeScreen(currentId, play, openArtist, openAlbum)
+                HomeScreen(currentId, play, openItem, openCollection)
             }
             composable(Routes.SEARCH) {
-                SearchScreen(currentId, play, openArtist, openAlbum)
+                SearchScreen(currentId, playerVm::playWithRadio, openArtist, openCollection)
             }
             composable(Routes.LIBRARY) {
                 LibraryScreen(currentId, play, shuffle)
             }
-            composable(Routes.ARTIST, arguments = listOf(navArgument("id") { type = NavType.LongType })) { entry ->
+            composable(Routes.ARTIST, arguments = listOf(navArgument("id") { type = NavType.StringType })) { entry ->
                 ArtistScreen(
-                    artistId = entry.arguments?.getLong("id") ?: 0L,
-                    currentTrackId = currentId,
-                    onPlay = play,
+                    artistId = entry.arguments?.getString("id").orEmpty(),
+                    currentSongId = currentId,
+                    onPlaySongs = play,
                     onShuffle = shuffle,
-                    onAlbumClick = openAlbum,
-                    onArtistClick = openArtist,
+                    onOpenItem = openItem,
+                    onOpenCollection = openCollection,
                     onBack = { nav.popBackStack() },
                 )
             }
-            composable(Routes.ALBUM, arguments = listOf(navArgument("id") { type = NavType.LongType })) { entry ->
-                AlbumScreen(
-                    albumId = entry.arguments?.getLong("id") ?: 0L,
-                    currentTrackId = currentId,
-                    onPlay = play,
+            composable(Routes.COLLECTION, arguments = listOf(navArgument("id") { type = NavType.StringType })) { entry ->
+                CollectionScreen(
+                    browseId = entry.arguments?.getString("id").orEmpty(),
+                    currentSongId = currentId,
+                    onPlaySongs = play,
                     onShuffle = shuffle,
                     onArtistClick = openArtist,
                     onBack = { nav.popBackStack() },

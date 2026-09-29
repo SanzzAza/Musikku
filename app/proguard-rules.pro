@@ -1,1 +1,1 @@
--keep class com.example.musikku.data.model.** { *; }
+-keep class com.example.musikku.data.ytmusic.** { *; }

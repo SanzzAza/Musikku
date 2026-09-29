@@ -17,7 +17,6 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -29,7 +28,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
+import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
@@ -47,11 +46,10 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.musikku.data.model.Track
+import com.example.musikku.data.ytmusic.SongItem
 import com.example.musikku.ui.components.ErrorBox
 import com.example.musikku.ui.components.ListItemRow
-import com.example.musikku.ui.components.TrackRow
-import com.example.musikku.ui.components.formatFans
+import com.example.musikku.ui.components.SongRow
 
 private val browseCategories = listOf(
     "Pop Indonesia" to Color(0xFFE13300),
@@ -62,16 +60,18 @@ private val browseCategories = listOf(
     "Jazz" to Color(0xFF1E3264),
     "Indie" to Color(0xFF608108),
     "Lo-fi" to Color(0xFF503750),
-    "Galau" to Color(0xFF148A08),
-    "Workout" to Color(0xFF777777),
+    "Lagu Galau" to Color(0xFF148A08),
+    "Band Indonesia" to Color(0xFF777777),
+    "Pop Sunda" to Color(0xFF8D67AB),
+    "Koplo" to Color(0xFFDC148C),
 )
 
 @Composable
 fun SearchScreen(
-    currentTrackId: Long?,
-    onPlay: (List<Track>, Int) -> Unit,
-    onArtistClick: (Long) -> Unit,
-    onAlbumClick: (Long) -> Unit,
+    currentSongId: String?,
+    onPlaySong: (SongItem) -> Unit,
+    onArtistClick: (String) -> Unit,
+    onCollectionClick: (String) -> Unit,
     vm: SearchViewModel = viewModel(),
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
@@ -87,7 +87,7 @@ fun SearchScreen(
         TextField(
             value = state.query,
             onValueChange = vm::onQueryChange,
-            placeholder = { Text("Artis, lagu, atau album") },
+            placeholder = { Text("Lagu, artis, album, playlist") },
             leadingIcon = { Icon(Icons.Default.Search, null) },
             trailingIcon = {
                 if (state.query.isNotEmpty()) {
@@ -121,8 +121,9 @@ fun SearchScreen(
             return@Column
         }
 
-        TabRow(
+        ScrollableTabRow(
             selectedTabIndex = state.tab.ordinal,
+            edgePadding = 8.dp,
             containerColor = Color.Transparent,
             indicator = { positions ->
                 TabRowDefaults.SecondaryIndicator(
@@ -155,28 +156,36 @@ fun SearchScreen(
                 contentPadding = PaddingValues(vertical = 8.dp)
             ) {
                 when (state.tab) {
-                    SearchTab.SONGS -> itemsIndexed(state.tracks, key = { _, t -> t.id }) { i, track ->
-                        TrackRow(
-                            track = track,
-                            isCurrent = track.id == currentTrackId,
-                            onClick = { focus.clearFocus(); onPlay(state.tracks, i) }
+                    SearchTab.SONGS -> items(state.songs, key = { it.id }) { song ->
+                        SongRow(
+                            song = song,
+                            isCurrent = song.id == currentSongId,
+                            onClick = { focus.clearFocus(); onPlaySong(song) }
                         )
                     }
                     SearchTab.ARTISTS -> items(state.artists, key = { it.id }) { artist ->
                         ListItemRow(
-                            imageUrl = artist.pictureMedium,
-                            title = artist.name.orEmpty(),
-                            subtitle = "Artis • ${formatFans(artist.nbFan)}",
+                            imageUrl = artist.thumbnail,
+                            title = artist.title,
+                            subtitle = "Artis • ${artist.subtitle}",
                             circle = true,
                             onClick = { focus.clearFocus(); onArtistClick(artist.id) }
                         )
                     }
                     SearchTab.ALBUMS -> items(state.albums, key = { it.id }) { album ->
                         ListItemRow(
-                            imageUrl = album.coverMedium,
-                            title = album.title.orEmpty(),
-                            subtitle = "${album.recordType?.replaceFirstChar { it.uppercase() } ?: "Album"} • ${album.artist?.name.orEmpty()}",
-                            onClick = { focus.clearFocus(); onAlbumClick(album.id) }
+                            imageUrl = album.thumbnail,
+                            title = album.title,
+                            subtitle = album.subtitle,
+                            onClick = { focus.clearFocus(); onCollectionClick(album.id) }
+                        )
+                    }
+                    SearchTab.PLAYLISTS -> items(state.playlists, key = { it.id }) { pl ->
+                        ListItemRow(
+                            imageUrl = pl.thumbnail,
+                            title = pl.title,
+                            subtitle = pl.subtitle,
+                            onClick = { focus.clearFocus(); onCollectionClick(pl.id) }
                         )
                     }
                 }
@@ -186,9 +195,10 @@ fun SearchScreen(
 }
 
 private fun isEmpty(s: SearchUiState) = when (s.tab) {
-    SearchTab.SONGS -> s.tracks.isEmpty()
+    SearchTab.SONGS -> s.songs.isEmpty()
     SearchTab.ARTISTS -> s.artists.isEmpty()
     SearchTab.ALBUMS -> s.albums.isEmpty()
+    SearchTab.PLAYLISTS -> s.playlists.isEmpty()
 }
 
 @Composable

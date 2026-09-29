@@ -1,4 +1,4 @@
-package com.example.musikku.ui.album
+package com.example.musikku.ui.collection
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -27,66 +27,61 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.musikku.data.model.Track
+import com.example.musikku.data.ytmusic.SongItem
 import com.example.musikku.ui.artist.BackButton
 import com.example.musikku.ui.components.Artwork
 import com.example.musikku.ui.components.ErrorBox
 import com.example.musikku.ui.components.LoadingBox
 import com.example.musikku.ui.components.PlayShuffleButtons
-import com.example.musikku.ui.components.TrackRow
+import com.example.musikku.ui.components.SongRow
 
+/** Halaman album ATAU playlist YouTube Music. */
 @Composable
-fun AlbumScreen(
-    albumId: Long,
-    currentTrackId: Long?,
-    onPlay: (List<Track>, Int) -> Unit,
-    onShuffle: (List<Track>) -> Unit,
-    onArtistClick: (Long) -> Unit,
+fun CollectionScreen(
+    browseId: String,
+    currentSongId: String?,
+    onPlaySongs: (List<SongItem>, Int) -> Unit,
+    onShuffle: (List<SongItem>) -> Unit,
+    onArtistClick: (String) -> Unit,
     onBack: () -> Unit,
-    vm: AlbumViewModel = viewModel(),
+    vm: CollectionViewModel = viewModel(),
 ) {
-    LaunchedEffect(albumId) { vm.load(albumId) }
+    LaunchedEffect(browseId) { vm.load(browseId) }
     val state by vm.state.collectAsStateWithLifecycle()
-    val album = state.album
-    val tracks = album?.tracks?.data.orEmpty()
+    val page = state.page
+    val isAlbum = browseId.startsWith("MPRE")
 
     Box(Modifier.fillMaxSize()) {
         when {
-            state.loading && album == null -> LoadingBox()
-            state.error != null && album == null ->
-                ErrorBox(state.error!!, onRetry = { vm.load(albumId, force = true) })
-            album != null -> LazyColumn(contentPadding = PaddingValues(bottom = 24.dp)) {
+            state.loading && page == null -> LoadingBox()
+            state.error != null && page == null ->
+                ErrorBox(state.error!!, onRetry = { vm.load(browseId, force = true) })
+            page != null -> LazyColumn(contentPadding = PaddingValues(bottom = 24.dp)) {
                 item {
                     Column(
                         Modifier
                             .fillMaxWidth()
-                            .background(
-                                Brush.verticalGradient(
-                                    listOf(Color(0xFF3F3F46), MaterialTheme.colorScheme.background)
-                                )
-                            )
+                            .background(Brush.verticalGradient(listOf(Color(0xFF3F3F46), MaterialTheme.colorScheme.background)))
                             .statusBarsPadding()
                             .padding(top = 56.dp, bottom = 12.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Artwork(album.coverXl ?: album.coverBig, Modifier.size(230.dp))
+                        Artwork(page.thumbnail, Modifier.size(230.dp))
                     }
                 }
                 item {
                     Column(Modifier.padding(horizontal = 16.dp)) {
-                        Text(album.title.orEmpty(), style = MaterialTheme.typography.headlineMedium)
+                        Text(page.title, style = MaterialTheme.typography.headlineMedium)
                         Spacer(Modifier.height(6.dp))
+                        page.author?.takeIf { it.name.isNotBlank() }?.let { author ->
+                            Text(
+                                author.name,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.clickable(enabled = author.id != null) { author.id?.let(onArtistClick) }
+                            )
+                        }
                         Text(
-                            album.artist?.name.orEmpty(),
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.clickable { album.artist?.id?.let(onArtistClick) }
-                        )
-                        Text(
-                            listOfNotNull(
-                                album.recordType?.replaceFirstChar { it.uppercase() },
-                                album.releaseDate?.take(4),
-                                "${tracks.size} lagu"
-                            ).joinToString(" • "),
+                            listOf(page.subtitle, page.secondSubtitle).filter { it.isNotBlank() }.joinToString(" • "),
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             style = MaterialTheme.typography.bodyMedium
                         )
@@ -94,18 +89,19 @@ fun AlbumScreen(
                 }
                 item {
                     PlayShuffleButtons(
-                        onPlay = { onPlay(tracks, 0) },
-                        onShuffle = { onShuffle(tracks) },
+                        onPlay = { onPlaySongs(page.songs, 0) },
+                        onShuffle = { onShuffle(page.songs) },
                         modifier = Modifier.padding(vertical = 8.dp)
                     )
                 }
-                itemsIndexed(tracks, key = { _, t -> t.id }) { i, track ->
-                    TrackRow(
-                        track = track,
-                        index = i + 1,
-                        showArtwork = false,
-                        isCurrent = track.id == currentTrackId,
-                        onClick = { onPlay(tracks, i) }
+                itemsIndexed(page.songs, key = { i, s -> "$i-${s.id}" }) { i, song ->
+                    SongRow(
+                        song = song,
+                        index = if (isAlbum) i + 1 else null,
+                        showArtwork = !isAlbum,
+                        showAlbum = !isAlbum,
+                        isCurrent = song.id == currentSongId,
+                        onClick = { onPlaySongs(page.songs, i) }
                     )
                 }
             }

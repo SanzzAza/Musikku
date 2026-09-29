@@ -33,7 +33,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -41,13 +40,13 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
-import com.example.musikku.data.model.Album
-import com.example.musikku.data.model.Artist
-import com.example.musikku.data.model.Track
-import java.text.NumberFormat
-import java.util.Locale
+import com.example.musikku.data.ytmusic.AlbumItem
+import com.example.musikku.data.ytmusic.ArtistItem
+import com.example.musikku.data.ytmusic.SongItem
+import com.example.musikku.data.ytmusic.YTItem
 
 @Composable
 fun Artwork(
@@ -57,9 +56,7 @@ fun Artwork(
     placeholder: ImageVector = Icons.Default.MusicNote,
 ) {
     Box(
-        modifier
-            .clip(shape)
-            .background(MaterialTheme.colorScheme.surfaceVariant),
+        modifier.clip(shape).background(MaterialTheme.colorScheme.surfaceVariant),
         contentAlignment = Alignment.Center
     ) {
         Icon(placeholder, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -72,21 +69,21 @@ fun Artwork(
     }
 }
 
+/** Baris lagu: cover, judul, artis • album • durasi. */
 @Composable
-fun TrackRow(
-    track: Track,
+fun SongRow(
+    song: SongItem,
     isCurrent: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     index: Int? = null,
     showArtwork: Boolean = true,
+    showAlbum: Boolean = true,
 ) {
-    val playable = track.isPlayable
     Row(
         modifier
             .fillMaxWidth()
-            .clickable(enabled = playable, onClick = onClick)
-            .alpha(if (playable) 1f else 0.4f)
+            .clickable(onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -95,30 +92,28 @@ fun TrackRow(
                 "$index",
                 modifier = Modifier.width(32.dp),
                 style = MaterialTheme.typography.bodyMedium,
-                color = if (isCurrent) MaterialTheme.colorScheme.primary
-                else MaterialTheme.colorScheme.onSurfaceVariant
+                color = if (isCurrent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
         if (showArtwork) {
-            Artwork(track.album?.coverMedium, Modifier.size(50.dp))
+            Artwork(song.thumbnail, Modifier.size(50.dp))
             Spacer(Modifier.width(12.dp))
         }
         Column(Modifier.weight(1f)) {
             Text(
-                track.title.orEmpty(),
+                song.title,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.Medium,
-                color = if (isCurrent) MaterialTheme.colorScheme.primary
-                else MaterialTheme.colorScheme.onSurface
+                color = if (isCurrent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
             )
             Text(
-                buildString {
-                    if (track.explicitLyrics) append("E • ")
-                    append(track.artist?.name.orEmpty())
-                    if (track.duration > 0) append(" • ${formatDuration(track.duration)}")
-                },
+                listOfNotNull(
+                    song.artistsText.takeIf { it.isNotBlank() },
+                    song.album?.name?.takeIf { showAlbum && it.isNotBlank() },
+                    song.durationSec.takeIf { it > 0 }?.let { formatDuration(it) },
+                ).joinToString(" • "),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 style = MaterialTheme.typography.bodyMedium,
@@ -131,51 +126,48 @@ fun TrackRow(
     }
 }
 
+/** Kartu serbaguna untuk carousel (lagu, album, playlist, artis). */
 @Composable
-fun ArtistCircle(artist: Artist, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun ItemCard(item: YTItem, onClick: () -> Unit, modifier: Modifier = Modifier, size: Dp = 140.dp) {
+    val isArtist = item is ArtistItem
     Column(
         modifier
-            .width(130.dp)
+            .width(size + 12.dp)
             .clip(RoundedCornerShape(8.dp))
             .clickable(onClick = onClick)
             .padding(6.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = if (isArtist) Alignment.CenterHorizontally else Alignment.Start
     ) {
         Artwork(
-            artist.pictureMedium, Modifier.size(118.dp),
-            shape = CircleShape, placeholder = Icons.Default.Person
+            item.thumbnail,
+            Modifier.size(size),
+            shape = if (isArtist) CircleShape else RoundedCornerShape(8.dp),
+            placeholder = if (isArtist) Icons.Default.Person else Icons.Default.MusicNote
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            artist.name.orEmpty(),
-            maxLines = 1, overflow = TextOverflow.Ellipsis,
-            style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold,
-            textAlign = TextAlign.Center
+            item.title,
+            maxLines = if (isArtist) 1 else 2,
+            overflow = TextOverflow.Ellipsis,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.SemiBold,
+            textAlign = if (isArtist) TextAlign.Center else TextAlign.Start
         )
-        Text("Artis", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(
+            itemSubtitle(item),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = if (isArtist) TextAlign.Center else TextAlign.Start
+        )
     }
 }
 
-@Composable
-fun AlbumCard(album: Album, subtitle: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    Column(
-        modifier
-            .width(150.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .clickable(onClick = onClick)
-            .padding(6.dp)
-    ) {
-        Artwork(album.coverMedium, Modifier.size(138.dp))
-        Spacer(Modifier.height(8.dp))
-        Text(
-            album.title.orEmpty(), maxLines = 1, overflow = TextOverflow.Ellipsis,
-            style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold
-        )
-        Text(
-            subtitle, maxLines = 1, overflow = TextOverflow.Ellipsis,
-            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-    }
+fun itemSubtitle(item: YTItem): String = when (item) {
+    is SongItem -> item.artistsText
+    is AlbumItem -> item.subtitle
+    is ArtistItem -> item.subtitle.ifBlank { "Artis" }
 }
 
 @Composable
@@ -207,15 +199,24 @@ fun ListItemRow(
 }
 
 @Composable
-fun SectionTitle(text: String, modifier: Modifier = Modifier) {
-    Text(
-        text,
-        style = MaterialTheme.typography.titleLarge,
-        modifier = modifier.padding(start = 16.dp, end = 16.dp, top = 24.dp, bottom = 8.dp)
-    )
+fun SectionTitle(text: String, modifier: Modifier = Modifier, action: String? = null, onAction: (() -> Unit)? = null) {
+    Row(
+        modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, top = 24.dp, bottom = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(text, style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+        if (action != null && onAction != null) {
+            Text(
+                action,
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.clip(RoundedCornerShape(50)).clickable(onClick = onAction).padding(horizontal = 10.dp, vertical = 6.dp)
+            )
+        }
+    }
 }
 
-/** Tombol shuffle + tombol play bulat besar ala Spotify. */
+/** Tombol shuffle + tombol play bulat besar. */
 @Composable
 fun PlayShuffleButtons(onPlay: () -> Unit, onShuffle: () -> Unit, modifier: Modifier = Modifier) {
     Row(
@@ -223,9 +224,7 @@ fun PlayShuffleButtons(onPlay: () -> Unit, onShuffle: () -> Unit, modifier: Modi
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        IconButton(onClick = onShuffle) {
-            Icon(Icons.Default.Shuffle, "Acak", Modifier.size(28.dp))
-        }
+        IconButton(onClick = onShuffle) { Icon(Icons.Default.Shuffle, "Acak", Modifier.size(28.dp)) }
         FilledIconButton(
             onClick = onPlay,
             modifier = Modifier.size(56.dp),
@@ -233,9 +232,7 @@ fun PlayShuffleButtons(onPlay: () -> Unit, onShuffle: () -> Unit, modifier: Modi
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary
             )
-        ) {
-            Icon(Icons.Default.PlayArrow, "Putar", Modifier.size(32.dp))
-        }
+        ) { Icon(Icons.Default.PlayArrow, "Putar", Modifier.size(32.dp)) }
     }
 }
 
@@ -261,15 +258,11 @@ fun ErrorBox(message: String, onRetry: () -> Unit, modifier: Modifier = Modifier
     }
 }
 
-fun formatDuration(seconds: Int): String = "%d:%02d".format(seconds / 60, seconds % 60)
+fun formatDuration(seconds: Int): String =
+    if (seconds >= 3600) "%d:%02d:%02d".format(seconds / 3600, (seconds % 3600) / 60, seconds % 60)
+    else "%d:%02d".format(seconds / 60, seconds % 60)
 
 fun formatMs(ms: Long): String = formatDuration((ms / 1000).toInt())
-
-fun formatFans(n: Long): String = when {
-    n >= 1_000_000 -> "%.1f jt penggemar".format(Locale("id"), n / 1_000_000.0)
-    n >= 1_000 -> "%.1f rb penggemar".format(Locale("id"), n / 1_000.0)
-    else -> "${NumberFormat.getInstance(Locale("id")).format(n)} penggemar"
-}
 
 fun Throwable.toUserMessage(): String = when (this) {
     is java.net.UnknownHostException -> "Tidak ada koneksi internet"

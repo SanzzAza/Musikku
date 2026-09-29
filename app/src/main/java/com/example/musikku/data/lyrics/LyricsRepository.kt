@@ -74,9 +74,9 @@ class LyricsRepository {
         .build()
         .create(LrcLibApi::class.java)
 
-    private val cache = ConcurrentHashMap<Long, Lyrics>()
+    private val cache = ConcurrentHashMap<String, Lyrics>()
 
-    suspend fun getLyrics(trackId: Long, title: String, artist: String, album: String?, durationSec: Int): Lyrics =
+    suspend fun getLyrics(trackId: String, title: String, artist: String, album: String?, durationSec: Int): Lyrics =
         cache[trackId] ?: withContext(Dispatchers.IO) {
             fetch(title, artist, album, durationSec).also { cache[trackId] = it }
         }

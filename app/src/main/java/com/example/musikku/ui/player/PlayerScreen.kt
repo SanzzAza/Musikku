@@ -85,14 +85,14 @@ fun PlayerScreen(
     onToggleShuffle: () -> Unit,
     onCycleRepeat: () -> Unit,
     onToggleFavorite: () -> Unit,
-    onArtistClick: (Long) -> Unit,
+    onArtistClick: (String) -> Unit,
     lyrics: LyricsUiState,
     onRetryLyrics: () -> Unit,
 ) {
-    val track = state.track
+    val song = state.song
     var showLyrics by rememberSaveable { mutableStateOf(false) }
     BackHandler(enabled = showLyrics) { showLyrics = false }
-    val cover = track?.album?.coverXl ?: track?.album?.coverMedium
+    val cover = song?.thumbnail
 
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         // Latar blur dari cover album (blur butuh Android 12+, di bawahnya hanya gelap)
@@ -124,7 +124,7 @@ fun PlayerScreen(
                 Column(Modifier.weight(1f), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("SEDANG DIPUTAR", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(
-                        track?.album?.title.orEmpty(), maxLines = 1, overflow = TextOverflow.Ellipsis,
+                        song?.album?.name.orEmpty(), maxLines = 1, overflow = TextOverflow.Ellipsis,
                         style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold
                     )
                 }
@@ -138,15 +138,15 @@ fun PlayerScreen(
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text(
-                        track?.title.orEmpty(), style = MaterialTheme.typography.titleLarge,
+                        song?.title.orEmpty(), style = MaterialTheme.typography.titleLarge,
                         maxLines = 1, overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        track?.artist?.name.orEmpty(),
+                        song?.artistsText.orEmpty(),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1, overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.clickable {
-                            track?.artist?.id?.takeIf { it > 0 }?.let(onArtistClick)
+                            song?.artists?.firstOrNull { it.id != null }?.id?.let(onArtistClick)
                         }
                     )
                 }
@@ -285,11 +285,11 @@ fun PlayerScreen(
                     }
                     Column(Modifier.weight(1f)) {
                         Text(
-                            track?.title.orEmpty(), fontWeight = FontWeight.Bold,
+                            song?.title.orEmpty(), fontWeight = FontWeight.Bold,
                             maxLines = 1, overflow = TextOverflow.Ellipsis
                         )
                         Text(
-                            track?.artist?.name.orEmpty(), style = MaterialTheme.typography.bodySmall,
+                            song?.artistsText.orEmpty(), style = MaterialTheme.typography.bodySmall,
                             color = Color.White.copy(alpha = 0.7f), maxLines = 1, overflow = TextOverflow.Ellipsis
                         )
                     }
