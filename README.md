@@ -1,6 +1,6 @@
 # 🎵 Musikku — Aplikasi Musik Android (Kotlin + Jetpack Compose)
 
-Aplikasi streaming musik ala Spotify / YouTube Music.
+Aplikasi streaming musik ala Spotify / YouTube Music — **lagu diputar full** (bukan preview).
 
 ## ✨ Fitur
 - **Beranda**: Lagu trending, artis populer, album populer (chart Deezer)
@@ -21,7 +21,8 @@ Aplikasi streaming musik ala Spotify / YouTube Music.
 | Network | Retrofit + Gson |
 | Gambar | Coil |
 | Player | AndroidX Media3 (ExoPlayer + MediaSessionService) |
-| Sumber data | [Deezer API](https://developers.deezer.com/api) — gratis, **tanpa API key** |
+| Metadata (cari, chart, artis, album) | [Deezer API](https://developers.deezer.com/api) — gratis, tanpa API key |
+| Audio full | YouTube Music via [NewPipe Extractor](https://github.com/TeamNewPipe/NewPipeExtractor) |
 
 ## 📁 Struktur
 ```
@@ -48,13 +49,19 @@ app/src/main/java/com/example/musikku/
 2. Tunggu Gradle sync selesai (JDK 17).
 3. Jalankan di emulator / HP (Android 7.0+ / API 24).
 
+## 🎧 Cara Audio Full Bekerja
+1. Pencarian, chart, info artis & album diambil dari **Deezer** (datanya rapi + cover HD).
+2. Saat lagu diputar, `YouTubeAudioResolver` mencari lagu yang sama di **YouTube Music**
+   (kategori *Songs*), dicocokkan lewat **judul, artis, dan durasi**, lalu mengambil stream audio
+   kualitas tertinggi (Opus 160 kbps / M4A 128 kbps).
+3. Lagu berikutnya di antrian di-*prefetch* supaya perpindahan lagu mulus.
+4. Kalau YouTube gagal, otomatis fallback ke preview 30 detik Deezer.
+
 ## ⚠️ Catatan Penting
-- Deezer API gratis hanya menyediakan **preview 30 detik** per lagu. Ini batasan legal —
-  lagu penuh butuh lisensi (Spotify/YT Music membayar label rekaman).
-- URL preview Deezer kedaluwarsa ± 1 jam, jadi player memakai URI `deezer://track/{id}`
-  yang di-resolve ke URL baru tepat sebelum diputar (lihat `PlaybackService.resolve`).
-- Kalau mau lagu full: ganti sumber ke **Jamendo API** (musik indie berlisensi Creative Commons,
-  lagu penuh, gratis dengan client_id) atau server/musik milik sendiri.
+- Mengambil audio dari YouTube melanggar ToS YouTube → aplikasi **tidak bisa masuk Play Store**;
+  distribusikan lewat GitHub Releases saja (sama seperti NewPipe / ViMusic / InnerTune).
+- Kalau suatu saat lagu tiba-tiba tidak bisa diputar, biasanya karena YouTube mengubah sesuatu →
+  update versi `NewPipeExtractor` di `app/build.gradle.kts` ke [rilis terbaru](https://github.com/TeamNewPipe/NewPipeExtractor/releases), lalu push.
 
 ## 🚀 Build & Rilis Otomatis (GitHub Actions)
 Setiap **push ke branch `main`** (atau klik *Run workflow* di tab **Actions**) akan:

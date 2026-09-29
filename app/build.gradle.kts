@@ -42,6 +42,8 @@ android {
         }
     }
     compileOptions {
+        // Wajib untuk NewPipe Extractor di Android < 13
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -81,4 +83,8 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.7.0")
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+
+    // Audio full dari YouTube Music
+    implementation("com.github.TeamNewPipe:NewPipeExtractor:v0.26.5")
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs_nio:2.1.2")
 }

@@ -203,7 +203,7 @@ fun PlayerScreen(
             }
 
             Text(
-                state.error ?: "Preview 30 detik • Sumber: Deezer",
+                state.error ?: "Audio full • YouTube Music",
                 style = MaterialTheme.typography.bodySmall,
                 color = if (state.error != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(bottom = 16.dp)

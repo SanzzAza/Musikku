@@ -10,6 +10,7 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        maven("https://jitpack.io") // NewPipe Extractor
     }
 }
 rootProject.name = "Musikku"

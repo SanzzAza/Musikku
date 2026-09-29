@@ -9,7 +9,6 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
-import androidx.media3.common.MimeTypes
 import androidx.media3.common.Player
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
@@ -192,8 +191,7 @@ private fun Track.toMediaItem(): MediaItem {
         .build()
     return MediaItem.Builder()
         .setMediaId(id.toString())
-        .setUri(PlayerUris.forTrack(id))
-        .setMimeType(MimeTypes.AUDIO_MPEG)
+        .setUri(PlayerUris.forTrack(id, title, artist?.name, duration))
         .setMediaMetadata(metadata)
         .build()
 }
