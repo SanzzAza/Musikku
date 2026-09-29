@@ -16,6 +16,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
@@ -28,6 +30,7 @@ import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -56,6 +59,7 @@ import com.example.musikku.player.NowPlaying
 import com.example.musikku.ui.components.Artwork
 import com.example.musikku.ui.components.formatMs
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlayerScreen(
     state: NowPlaying,
@@ -139,6 +143,12 @@ fun PlayerScreen(
             // Seek bar — nilai lokal saat digeser supaya tidak "loncat-loncat"
             var dragValue by remember { mutableStateOf<Float?>(null) }
             val duration = state.durationMs.coerceAtLeast(1L)
+            val sliderColors = SliderDefaults.colors(
+                thumbColor = Color.White,
+                activeTrackColor = Color.White,
+                inactiveTrackColor = Color.White.copy(alpha = 0.25f)
+            )
+            val interaction = remember { MutableInteractionSource() }
             Slider(
                 value = dragValue ?: state.progress,
                 onValueChange = { dragValue = it },
@@ -146,12 +156,24 @@ fun PlayerScreen(
                     dragValue?.let { onSeek((it * duration).toLong()) }
                     dragValue = null
                 },
-                colors = SliderDefaults.colors(
-                    thumbColor = Color.White,
-                    activeTrackColor = Color.White,
-                    inactiveTrackColor = Color.White.copy(alpha = 0.25f)
-                ),
-                modifier = Modifier.padding(top = 12.dp)
+                interactionSource = interaction,
+                thumb = {
+                    Box(
+                        Modifier
+                            .size(if (dragValue != null) 16.dp else 12.dp)
+                            .background(Color.White, CircleShape)
+                    )
+                },
+                track = { sliderState ->
+                    SliderDefaults.Track(
+                        sliderState = sliderState,
+                        modifier = Modifier.height(4.dp),
+                        colors = sliderColors,
+                        drawStopIndicator = null,
+                        thumbTrackGapSize = 0.dp,
+                    )
+                },
+                modifier = Modifier.padding(top = 12.dp).height(24.dp)
             )
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 val shownPos = dragValue?.let { (it * duration).toLong() } ?: state.positionMs
@@ -202,11 +224,16 @@ fun PlayerScreen(
                 }
             }
 
-            Text(
-                state.error ?: "Audio full • YouTube Music",
-                style = MaterialTheme.typography.bodySmall,
-                color = if (state.error != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(bottom = 16.dp)
+            // Hanya tampil kalau ada error
+            state.error?.let {
+                Text(
+                    it,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(bottom = 8.dp)
+                )
+            }
+            Spacer(Modifier.height(16.dp))
             )
         }
     }
