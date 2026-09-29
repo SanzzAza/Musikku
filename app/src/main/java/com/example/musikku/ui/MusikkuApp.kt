@@ -115,6 +115,8 @@ fun MusikkuApp(playerVm: PlayerViewModel = viewModel()) {
                             onClick = { nav.navigate(Routes.PLAYER) { launchSingleTop = true } },
                             onPlayPause = playerVm::togglePlayPause,
                             onNext = playerVm::next,
+                            isLiked = liked.any { it.id == currentId },
+                            onToggleLike = playerVm::toggleFavorite,
                         )
                     }
                     BottomBar(nav, route)

@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.AddCircleOutline
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material3.Icon
@@ -37,6 +39,8 @@ fun MiniPlayer(
     onClick: () -> Unit,
     onPlayPause: () -> Unit,
     onNext: () -> Unit,
+    isLiked: Boolean,
+    onToggleLike: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val song = state.song ?: return
@@ -62,6 +66,13 @@ fun MiniPlayer(
                     song.artistsText, maxLines = 1, overflow = TextOverflow.Ellipsis,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            IconButton(onClick = onToggleLike) {
+                Icon(
+                    if (isLiked) Icons.Default.CheckCircle else Icons.Default.AddCircleOutline,
+                    if (isLiked) "Hapus dari Koleksi" else "Simpan ke Koleksi",
+                    tint = if (isLiked) MaterialTheme.colorScheme.primary else Color.White
                 )
             }
             IconButton(onClick = onPlayPause) {

@@ -1,5 +1,6 @@
 package com.example.musikku.ui.search
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -20,30 +22,45 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.AddCircleOutline
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Tab
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.ScrollableTabRow
+import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
@@ -53,7 +70,11 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.musikku.AppModule
+import com.example.musikku.data.ytmusic.AlbumItem
+import com.example.musikku.data.ytmusic.ArtistItem
 import com.example.musikku.data.ytmusic.SongItem
+import com.example.musikku.data.ytmusic.YTItem
+import com.example.musikku.ui.components.Artwork
 import com.example.musikku.ui.components.ErrorBox
 import com.example.musikku.ui.components.ListItemRow
 import com.example.musikku.ui.components.SongRow
@@ -84,53 +105,110 @@ fun SearchScreen(
     val state by vm.state.collectAsStateWithLifecycle()
     val history by AppModule.searchHistory.queries.collectAsStateWithLifecycle()
     val focus = LocalFocusManager.current
+    val recents by AppModule.recents.items.collectAsStateWithLifecycle()
+    val liked by AppModule.favorites.items.collectAsStateWithLifecycle()
+
+    // Mode cari aktif = kolom pencarian dibuka (seperti Spotify)
+    var searchMode by rememberSaveable { mutableStateOf(false) }
+    val focusRequester = remember { FocusRequester() }
+    val exitSearch = {
+        vm.onQueryChange("")
+        focus.clearFocus()
+        searchMode = false
+    }
+    BackHandler(enabled = searchMode) { exitSearch() }
+
+    // Setiap item yang dibuka dari pencarian masuk ke "Baru Diputar"
+    val openSong: (SongItem) -> Unit = { AppModule.recents.add(it); focus.clearFocus(); onPlaySong(it) }
+    val openArtist: (ArtistItem) -> Unit = { AppModule.recents.add(it); focus.clearFocus(); onArtistClick(it.id) }
+    val openCollection: (AlbumItem) -> Unit = { AppModule.recents.add(it); focus.clearFocus(); onCollectionClick(it.id) }
 
     Column(Modifier.fillMaxSize().statusBarsPadding()) {
-        Text(
-            "Cari",
-            style = MaterialTheme.typography.headlineMedium,
-            modifier = Modifier.padding(start = 16.dp, top = 20.dp, bottom = 12.dp)
-        )
-
-        TextField(
-            value = state.query,
-            onValueChange = vm::onQueryChange,
-            placeholder = { Text("Lagu, artis, album, playlist") },
-            leadingIcon = { Icon(Icons.Default.Search, null) },
-            trailingIcon = {
-                if (state.query.isNotEmpty()) {
-                    IconButton(onClick = { vm.onQueryChange("") }) { Icon(Icons.Default.Clear, "Hapus") }
-                }
-            },
-            singleLine = true,
-            shape = RoundedCornerShape(10.dp),
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-            keyboardActions = KeyboardActions(onSearch = { vm.searchNow(); focus.clearFocus() }),
-            colors = TextFieldDefaults.colors(
-                focusedContainerColor = Color.White,
-                unfocusedContainerColor = Color.White,
-                focusedTextColor = Color.Black,
-                unfocusedTextColor = Color.Black,
-                focusedLeadingIconColor = Color.Black,
-                unfocusedLeadingIconColor = Color.Black,
-                focusedTrailingIconColor = Color.Black,
-                unfocusedTrailingIconColor = Color.Black,
-                focusedPlaceholderColor = Color.DarkGray,
-                unfocusedPlaceholderColor = Color.DarkGray,
-                cursorColor = Color.Black,
-                focusedIndicatorColor = Color.Transparent,
-                unfocusedIndicatorColor = Color.Transparent,
-            ),
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp)
-        )
-
-        if (state.query.isBlank()) {
+        if (!searchMode) {
+            Text(
+                "Cari",
+                style = MaterialTheme.typography.headlineMedium,
+                modifier = Modifier.padding(start = 16.dp, top = 20.dp, bottom = 12.dp)
+            )
+            // Kotak putih: ketuk untuk membuka mode cari
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .clip(RoundedCornerShape(8.dp))
+                    .background(Color.White)
+                    .clickable { searchMode = true }
+                    .padding(horizontal = 14.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(Icons.Default.Search, null, tint = Color.Black)
+                Spacer(Modifier.width(12.dp))
+                Text("Apa yang ingin kamu dengarkan?", color = Color.DarkGray, fontWeight = FontWeight.SemiBold)
+            }
             BrowseGrid(
                 history = history,
-                onHistoryClick = { vm.searchNow(it); focus.clearFocus() },
+                onHistoryClick = { searchMode = true; vm.searchNow(it) },
                 onHistoryRemove = { AppModule.searchHistory.remove(it) },
                 onClearHistory = { AppModule.searchHistory.clear() },
-                onCategoryClick = { vm.searchNow(it); focus.clearFocus() },
+                onCategoryClick = { searchMode = true; vm.searchNow(it) },
+            )
+            return@Column
+        }
+
+        LaunchedEffect(Unit) { if (state.query.isBlank()) focusRequester.requestFocus() }
+
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .background(Color(0xFF1F1F23))
+                .padding(start = 4.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = exitSearch) {
+                Icon(Icons.AutoMirrored.Filled.ArrowBack, "Kembali")
+            }
+            TextField(
+                value = state.query,
+                onValueChange = vm::onQueryChange,
+                placeholder = { Text("Apa yang ingin kamu dengarkan?", maxLines = 1) },
+                trailingIcon = {
+                    if (state.query.isNotEmpty()) {
+                        IconButton(onClick = { vm.onQueryChange(""); focusRequester.requestFocus() }) {
+                            Icon(Icons.Default.Clear, "Hapus")
+                        }
+                    }
+                },
+                singleLine = true,
+                shape = RoundedCornerShape(50),
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
+                keyboardActions = KeyboardActions(onSearch = { vm.searchNow(); focus.clearFocus() }),
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = Color(0xFF2E2E33),
+                    unfocusedContainerColor = Color(0xFF2E2E33),
+                    cursorColor = MaterialTheme.colorScheme.primary,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                ),
+                modifier = Modifier.weight(1f).focusRequester(focusRequester)
+            )
+        }
+
+        if (state.query.isBlank()) {
+            RecentList(
+                items = recents,
+                likedIds = liked.map { it.id }.toSet(),
+                onOpen = { item ->
+                    when (item) {
+                        is SongItem -> openSong(item)
+                        is ArtistItem -> openArtist(item)
+                        is AlbumItem -> openCollection(item)
+                    }
+                },
+                onRemove = { AppModule.recents.remove(it) },
+                onClearAll = { AppModule.recents.clear() },
+                onToggleLike = { AppModule.favorites.toggle(it) },
             )
             return@Column
         }
@@ -181,7 +259,7 @@ fun SearchScreen(
                         SongRow(
                             song = song,
                             isCurrent = song.id == currentSongId,
-                            onClick = { focus.clearFocus(); onPlaySong(song) }
+                            onClick = { openSong(song) }
                         )
                     }
                     SearchTab.ARTISTS -> items(state.artists, key = { it.id }) { artist ->
@@ -190,7 +268,7 @@ fun SearchScreen(
                             title = artist.title,
                             subtitle = "Artis • ${artist.subtitle}",
                             circle = true,
-                            onClick = { focus.clearFocus(); onArtistClick(artist.id) }
+                            onClick = { openArtist(artist) }
                         )
                     }
                     SearchTab.ALBUMS -> items(state.albums, key = { it.id }) { album ->
@@ -198,7 +276,7 @@ fun SearchScreen(
                             imageUrl = album.thumbnail,
                             title = album.title,
                             subtitle = album.subtitle,
-                            onClick = { focus.clearFocus(); onCollectionClick(album.id) }
+                            onClick = { openCollection(album) }
                         )
                     }
                     SearchTab.PLAYLISTS -> items(state.playlists, key = { it.id }) { pl ->
@@ -206,7 +284,7 @@ fun SearchScreen(
                             imageUrl = pl.thumbnail,
                             title = pl.title,
                             subtitle = pl.subtitle,
-                            onClick = { focus.clearFocus(); onCollectionClick(pl.id) }
+                            onClick = { openCollection(pl) }
                         )
                     }
                 }
@@ -345,5 +423,101 @@ private fun HistoryRow(query: String, onClick: () -> Unit, onRemove: () -> Unit)
         IconButton(onClick = onRemove) {
             Icon(Icons.Default.Close, "Hapus dari riwayat", tint = MaterialTheme.colorScheme.onSurfaceVariant)
         }
+    }
+}
+
+/** Daftar "Baru Diputar" ala Spotify. */
+@Composable
+private fun RecentList(
+    items: List<YTItem>,
+    likedIds: Set<String>,
+    onOpen: (YTItem) -> Unit,
+    onRemove: (YTItem) -> Unit,
+    onClearAll: () -> Unit,
+    onToggleLike: (SongItem) -> Unit,
+) {
+    if (items.isEmpty()) {
+        Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text("Putar apa yang kamu suka", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text(
+                    "Cari artis, lagu, album, dan playlist.",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 6.dp)
+                )
+            }
+        }
+        return
+    }
+    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 16.dp)) {
+        item {
+            Text(
+                "Baru Diputar",
+                style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 8.dp)
+            )
+        }
+        items(items, key = { "recent-${it.id}" }) { item ->
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .clickable { onOpen(item) }
+                    .padding(start = 16.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                val isArtist = item is ArtistItem
+                Artwork(
+                    item.thumbnail,
+                    Modifier.size(56.dp),
+                    shape = if (isArtist) CircleShape else RoundedCornerShape(4.dp),
+                    placeholder = if (isArtist) Icons.Default.Person else Icons.Default.MusicNote
+                )
+                Spacer(Modifier.width(14.dp))
+                Column(Modifier.weight(1f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            item.title, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                            style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium,
+                            modifier = Modifier.weight(1f, fill = false)
+                        )
+                        if (isArtist) {
+                            Spacer(Modifier.width(6.dp))
+                            Icon(Icons.Default.Verified, null, Modifier.size(16.dp), tint = Color(0xFF7FD7A6))
+                        }
+                    }
+                    Text(
+                        recentSubtitle(item), maxLines = 1, overflow = TextOverflow.Ellipsis,
+                        style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                if (item is SongItem) {
+                    val isLiked = item.id in likedIds
+                    IconButton(onClick = { onToggleLike(item) }) {
+                        Icon(
+                            if (isLiked) Icons.Default.CheckCircle else Icons.Default.AddCircleOutline,
+                            if (isLiked) "Hapus dari Koleksi" else "Simpan ke Koleksi",
+                            tint = if (isLiked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                IconButton(onClick = { onRemove(item) }) {
+                    Icon(Icons.Default.Close, "Hapus dari riwayat", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
+        item {
+            Box(Modifier.fillMaxWidth().padding(top = 16.dp), contentAlignment = Alignment.Center) {
+                OutlinedButton(onClick = onClearAll) { Text("Hapus riwayat") }
+            }
+        }
+    }
+}
+
+private fun recentSubtitle(item: YTItem): String = when (item) {
+    is ArtistItem -> "Artis"
+    is SongItem -> listOf("Lagu", item.artistsText).filter { it.isNotBlank() }.joinToString(" • ")
+    is AlbumItem -> if (item.isPlaylist) "Playlist" else {
+        val parts = item.subtitle.split(" • ").map { it.trim() }.filter { it.isNotBlank() }
+        (listOf("Album") + parts.filterNot { it.equals("Album", true) || it.equals("Single", true) || it.equals("EP", true) }.take(1)).joinToString(" • ")
     }
 }

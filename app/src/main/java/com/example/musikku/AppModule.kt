@@ -3,6 +3,7 @@ package com.example.musikku
 import android.content.Context
 import com.example.musikku.data.local.FavoritesStore
 import com.example.musikku.data.local.SearchHistoryStore
+import com.example.musikku.data.local.RecentStore
 import com.example.musikku.data.lyrics.LyricsRepository
 import com.example.musikku.data.ytmusic.YTMusic
 
@@ -15,9 +16,13 @@ object AppModule {
     lateinit var searchHistory: SearchHistoryStore
         private set
 
+    lateinit var recents: RecentStore
+        private set
+
     fun init(context: Context) {
         favorites = FavoritesStore(context.applicationContext)
         searchHistory = SearchHistoryStore(context.applicationContext)
+        recents = RecentStore(context.applicationContext)
     }
 
     /** Katalog musik: YouTube Music (cari, beranda, artis, album, playlist, radio). */
