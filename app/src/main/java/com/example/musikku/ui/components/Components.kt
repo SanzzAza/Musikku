@@ -2,6 +2,20 @@ package com.example.musikku.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
+import androidx.compose.material.icons.filled.AddCircleOutline
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.RemoveCircleOutline
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.example.musikku.AppModule
+import com.example.musikku.ui.playlist.PlaylistPicker
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -69,6 +83,7 @@ fun Artwork(
     }
 }
 
+@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 /** Baris lagu: cover, judul, artis • album • durasi. */
 @Composable
 fun SongRow(
@@ -79,12 +94,14 @@ fun SongRow(
     index: Int? = null,
     showArtwork: Boolean = true,
     showAlbum: Boolean = true,
+    extraMenu: List<Pair<String, () -> Unit>> = emptyList(),
 ) {
+    var menuOpen by remember { mutableStateOf(false) }
     Row(
         modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
-            .padding(horizontal = 16.dp, vertical = 8.dp),
+            .combinedClickable(onClick = onClick, onLongClick = { menuOpen = true })
+            .padding(start = 16.dp, top = 8.dp, bottom = 8.dp, end = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         if (index != null) {
@@ -122,6 +139,47 @@ fun SongRow(
         }
         if (isCurrent) {
             Icon(Icons.Default.GraphicEq, "Sedang diputar", tint = MaterialTheme.colorScheme.primary)
+        }
+        Box {
+            IconButton(onClick = { menuOpen = true }) {
+                Icon(Icons.Default.MoreVert, "Opsi lagu", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            SongMenu(song, expanded = menuOpen, onDismiss = { menuOpen = false }, extraMenu = extraMenu)
+        }
+    }
+}
+
+/** Menu ⋮ lagu: tambah ke playlist, suka/batal suka, plus opsi tambahan dari layar pemanggil. */
+@Composable
+fun SongMenu(
+    song: SongItem,
+    expanded: Boolean,
+    onDismiss: () -> Unit,
+    extraMenu: List<Pair<String, () -> Unit>> = emptyList(),
+) {
+    DropdownMenu(expanded = expanded, onDismissRequest = onDismiss) {
+        DropdownMenuItem(
+            text = { Text("Tambahkan ke playlist") },
+            leadingIcon = { Icon(Icons.AutoMirrored.Filled.PlaylistAdd, null) },
+            onClick = { onDismiss(); PlaylistPicker.open(song) }
+        )
+        val liked = AppModule.favorites.isFavorite(song.id)
+        DropdownMenuItem(
+            text = { Text(if (liked) "Hapus dari Lagu yang Disukai" else "Simpan ke Lagu yang Disukai") },
+            leadingIcon = {
+                Icon(
+                    if (liked) Icons.Default.CheckCircle else Icons.Default.AddCircleOutline, null,
+                    tint = if (liked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                )
+            },
+            onClick = { onDismiss(); AppModule.favorites.toggle(song) }
+        )
+        extraMenu.forEach { (label, action) ->
+            DropdownMenuItem(
+                text = { Text(label) },
+                leadingIcon = { Icon(Icons.Default.RemoveCircleOutline, null) },
+                onClick = { onDismiss(); action() }
+            )
         }
     }
 }

@@ -47,6 +47,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
@@ -85,6 +86,7 @@ fun PlayerScreen(
     onToggleShuffle: () -> Unit,
     onCycleRepeat: () -> Unit,
     onToggleFavorite: () -> Unit,
+    onAddToPlaylist: () -> Unit,
     onArtistClick: (String) -> Unit,
     lyrics: LyricsUiState,
     onRetryLyrics: () -> Unit,
@@ -128,7 +130,9 @@ fun PlayerScreen(
                         style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold
                     )
                 }
-                Spacer(Modifier.size(48.dp))
+                IconButton(onClick = onAddToPlaylist) {
+                    Icon(Icons.AutoMirrored.Filled.PlaylistAdd, "Tambahkan ke playlist")
+                }
             }
 
             Spacer(Modifier.weight(1f))

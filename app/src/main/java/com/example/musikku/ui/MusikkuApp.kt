@@ -53,6 +53,9 @@ import com.example.musikku.ui.library.LibraryScreen
 import com.example.musikku.ui.player.MiniPlayer
 import com.example.musikku.ui.player.PlayerScreen
 import com.example.musikku.ui.search.SearchScreen
+import com.example.musikku.ui.playlist.AddToPlaylistHost
+import com.example.musikku.ui.playlist.PlaylistScreen
+import com.example.musikku.ui.playlist.PlaylistPicker
 
 private object Routes {
     const val HOME = "home"
@@ -61,6 +64,8 @@ private object Routes {
     const val ARTIST = "artist/{id}"
     const val COLLECTION = "collection/{id}"
     const val PLAYER = "player"
+    const val PLAYLIST = "playlist/{id}"
+    fun playlist(id: String) = "playlist/$id"
     fun artist(id: String) = "artist/$id"
     fun collection(id: String) = "collection/$id"
 }
@@ -136,7 +141,23 @@ fun MusikkuApp(playerVm: PlayerViewModel = viewModel()) {
                 SearchScreen(currentId, playerVm::playWithRadio, openArtist, openCollection)
             }
             composable(Routes.LIBRARY) {
-                LibraryScreen(currentId, play, shuffle)
+                LibraryScreen(onOpenPlaylist = { nav.navigate(Routes.playlist(it)) })
+            }
+            composable(Routes.PLAYLIST, arguments = listOf(navArgument("id") { type = NavType.StringType })) { entry ->
+                PlaylistScreen(
+                    playlistId = entry.arguments?.getString("id").orEmpty(),
+                    currentSongId = currentId,
+                    onPlaySongs = play,
+                    onShuffle = shuffle,
+                    onFindSongs = {
+                        nav.navigate(Routes.SEARCH) {
+                            popUpTo(nav.graph.findStartDestination().id) { saveState = true }
+                            launchSingleTop = true
+                            restoreState = true
+                        }
+                    },
+                    onBack = { nav.popBackStack() },
+                )
             }
             composable(Routes.ARTIST, arguments = listOf(navArgument("id") { type = NavType.StringType })) { entry ->
                 ArtistScreen(
@@ -176,6 +197,7 @@ fun MusikkuApp(playerVm: PlayerViewModel = viewModel()) {
                     onToggleShuffle = playerVm::toggleShuffle,
                     onCycleRepeat = playerVm::cycleRepeat,
                     onToggleFavorite = playerVm::toggleFavorite,
+                    onAddToPlaylist = { now.song?.let { PlaylistPicker.open(it) } },
                     onArtistClick = { id ->
                         nav.popBackStack()
                         openArtist(id)
@@ -186,6 +208,7 @@ fun MusikkuApp(playerVm: PlayerViewModel = viewModel()) {
             }
         }
     }
+    AddToPlaylistHost()
 }
 
 @Composable

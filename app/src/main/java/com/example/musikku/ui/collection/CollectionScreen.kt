@@ -20,6 +20,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
+import androidx.compose.foundation.layout.Row
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Icon
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
+import com.example.musikku.ui.playlist.PlaylistPicker
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -89,11 +95,17 @@ fun CollectionScreen(
                 }
                 if (page.songs.isNotEmpty()) {
                     item {
-                        PlayShuffleButtons(
-                            onPlay = { onPlaySongs(page.songs, 0) },
-                            onShuffle = { onShuffle(page.songs) },
-                            modifier = Modifier.padding(vertical = 8.dp)
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconButton(onClick = { PlaylistPicker.open(page.songs) }, modifier = Modifier.padding(start = 8.dp)) {
+                                Icon(Icons.AutoMirrored.Filled.PlaylistAdd, "Simpan ke playlist", Modifier.size(28.dp))
+                            }
+                            Spacer(Modifier.weight(1f))
+                            PlayShuffleButtons(
+                                onPlay = { onPlaySongs(page.songs, 0) },
+                                onShuffle = { onShuffle(page.songs) },
+                                modifier = Modifier.padding(vertical = 8.dp)
+                            )
+                        }
                     }
                 } else {
                     item {
