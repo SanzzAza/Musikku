@@ -231,6 +231,25 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
         _state.update { it.copy(positionMs = positionMs) }
     }
 
+    /** Menyisipkan lagu tepat setelah lagu aktif atau di akhir daftar. */
+    fun enqueue(song: SongItem, playNext: Boolean) {
+        whenReady { c ->
+            songCache[song.id] = song
+            if (c.mediaItemCount == 0) {
+                c.setMediaItem(song.toMediaItem())
+                c.prepare()
+                c.play()
+            } else if (playNext) {
+                // MediaController tidak dapat mengatur shuffle order: matikan acak agar
+                // "putar berikutnya" benar-benar berikutnya, bukan janji palsu.
+                c.shuffleModeEnabled = false
+                c.addMediaItem(c.currentMediaItemIndex + 1, song.toMediaItem())
+            } else {
+                c.addMediaItem(song.toMediaItem())
+            }
+        }
+    }
+
     fun playQueueItem(index: Int) {
         val c = controller ?: return
         if (index !in 0 until c.mediaItemCount) return
@@ -343,7 +362,7 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
     }
 }
 
-private fun SongItem.toMediaItem(): MediaItem {
+internal fun SongItem.toMediaItem(): MediaItem {
     val metadata = MediaMetadata.Builder()
         .setTitle(title)
         .setArtist(artistsText)
@@ -365,7 +384,7 @@ private fun SongItem.toMediaItem(): MediaItem {
 }
 
 /** Fallback bila app dibuka ulang saat service masih memutar lagu. */
-private fun MediaItem.toSong(): SongItem {
+internal fun MediaItem.toSong(): SongItem {
     val md = mediaMetadata
     val extras = md.extras
     return SongItem(

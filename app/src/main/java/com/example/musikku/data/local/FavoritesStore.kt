@@ -23,6 +23,12 @@ class FavoritesStore(context: Context) {
         .orEmpty()
         .filter { it.id.isNotBlank() }
 
+    fun merge(songs: List<SongItem>) {
+        val updated = (_items.value + songs).distinctBy { it.id }
+        _items.value = updated
+        prefs.edit().putString(KEY, gson.toJson(updated)).apply()
+    }
+
     fun isFavorite(id: String): Boolean = _items.value.any { it.id == id }
 
     fun toggle(song: SongItem) {

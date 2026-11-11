@@ -44,6 +44,7 @@ import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -149,6 +150,9 @@ fun SongRow(
     }
 }
 
+data class QueueActions(val enqueue: (SongItem, Boolean) -> Unit)
+val LocalQueueActions = staticCompositionLocalOf<QueueActions?> { null }
+
 /** Menu ⋮ lagu: tambah ke playlist, suka/batal suka, plus opsi tambahan dari layar pemanggil. */
 @Composable
 fun SongMenu(
@@ -157,7 +161,12 @@ fun SongMenu(
     onDismiss: () -> Unit,
     extraMenu: List<Pair<String, () -> Unit>> = emptyList(),
 ) {
+    val queueActions = LocalQueueActions.current
     DropdownMenu(expanded = expanded, onDismissRequest = onDismiss) {
+        if (queueActions != null) {
+            DropdownMenuItem(text = { Text("Putar berikutnya") }, onClick = { onDismiss(); queueActions.enqueue(song, true) })
+            DropdownMenuItem(text = { Text("Tambahkan ke antrean") }, onClick = { onDismiss(); queueActions.enqueue(song, false) })
+        }
         DropdownMenuItem(
             text = { Text("Tambahkan ke playlist") },
             leadingIcon = { Icon(Icons.AutoMirrored.Filled.PlaylistAdd, null) },

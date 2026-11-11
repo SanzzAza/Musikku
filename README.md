@@ -16,6 +16,9 @@ Aplikasi streaming musik ala Spotify / YouTube Music — **lagu diputar full** (
 - **Antrean**: lihat daftar lagu, putar lagu pilihan, pindahkan urutan, atau hapus lagu lain dari antrean. Saat acak aktif, urutan putar dapat berbeda dari urutan daftar.
 - **Sleep timer**: jeda musik setelah 15, 30, 45, atau 60 menit. Timer berjalan selama layanan pemutar aktif; timer dibatalkan jika layanan/proses dihentikan.
 - **Coba lagi**: ulangi pemutaran saat terjadi kesalahan
+- **Backup koleksi**: ekspor dan impor JSON favorit dan playlist; impor menggabungkan data berdasarkan ID, bukan menimpa koleksi.
+- **Lanjutkan pemutaran**: antrean dan posisi terakhir dipulihkan dalam keadaan jeda.
+- **Tambah ke antrean**: gunakan menu titik tiga lagu untuk menambahkan lagu atau memutarnya berikutnya (menonaktifkan mode acak).
 
 ## 🧱 Tech Stack
 | Bagian | Library |

@@ -24,6 +24,9 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import android.widget.Toast
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -47,6 +50,8 @@ import com.example.musikku.data.ytmusic.SongItem
 import com.example.musikku.data.ytmusic.YTItem
 import com.example.musikku.player.SleepTimer
 import com.example.musikku.player.PlayerViewModel
+import com.example.musikku.ui.components.LocalQueueActions
+import com.example.musikku.ui.components.QueueActions
 import com.example.musikku.ui.collection.CollectionScreen
 import com.example.musikku.ui.artist.ArtistScreen
 import com.example.musikku.ui.home.HomeScreen
@@ -110,6 +115,18 @@ fun MusikkuApp(playerVm: PlayerViewModel = viewModel()) {
         }
     }
 
+    val context = LocalContext.current
+    CompositionLocalProvider(LocalQueueActions provides QueueActions { song, next ->
+        val shuffleWasOn = now.shuffle && now.hasMedia && next
+        playerVm.enqueue(song, next)
+        val message = when {
+            shuffleWasOn -> "Ditambahkan berikutnya. Mode acak dimatikan."
+            !now.hasMedia -> "Memutar lagu"
+            next -> "Akan diputar berikutnya"
+            else -> "Ditambahkan ke antrean"
+        }
+        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+    }) {
     Scaffold(
         contentWindowInsets = WindowInsets(0),
         containerColor = MaterialTheme.colorScheme.background,
@@ -218,6 +235,7 @@ fun MusikkuApp(playerVm: PlayerViewModel = viewModel()) {
         }
     }
     AddToPlaylistHost()
+    }
 }
 
 @Composable
