@@ -22,11 +22,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.shape.CircleShape
@@ -42,6 +45,8 @@ import androidx.compose.material.icons.filled.RepeatOne
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
+import androidx.compose.material.icons.automirrored.filled.QueueMusic
+import androidx.compose.material.icons.filled.Bedtime
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
@@ -54,6 +59,7 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -62,6 +68,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -107,6 +117,7 @@ fun PlayerScreen(
     if (showQueue) QueueDialog(state, onPlayQueueItem, onRemoveQueueItem, onMoveQueueItem) { showQueue = false }
     BackHandler(enabled = showLyrics) { showLyrics = false }
     val cover = song?.thumbnail
+    val coverTint by animateColorAsState(rememberCoverTint(cover), animationSpec = tween(600), label = "coverTint")
 
     Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         // Latar blur dari cover album (blur butuh Android 12+, di bawahnya hanya gelap)
@@ -119,7 +130,7 @@ fun PlayerScreen(
         Box(
             Modifier.fillMaxSize().background(
                 Brush.verticalGradient(
-                    listOf(Color.Black.copy(alpha = 0.45f), MaterialTheme.colorScheme.background)
+                    listOf(coverTint.copy(alpha = 0.90f), Color(0xFF101715).copy(alpha = 0.97f), MaterialTheme.colorScheme.background)
                 )
             )
         )
@@ -148,7 +159,7 @@ fun PlayerScreen(
             }
 
             Spacer(Modifier.weight(1f))
-            Artwork(cover, Modifier.fillMaxWidth().aspectRatio(1f), shape = RoundedCornerShape(10.dp))
+            Artwork(cover, Modifier.fillMaxWidth().sizeIn(maxWidth = 360.dp).aspectRatio(1f).shadow(20.dp, RoundedCornerShape(18.dp)), shape = RoundedCornerShape(18.dp))
             Spacer(Modifier.weight(1f))
 
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -260,10 +271,20 @@ fun PlayerScreen(
                 }
             }
 
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                TextButton(onClick = { showQueue = true }) { Text("Antrean (${state.queue.size})") }
-                TextButton(onClick = { showTimer = true }) {
-                    Text(if (sleepRemainingMs == null) "Sleep timer" else "Timer: ${(sleepRemainingMs + 59_999) / 60_000} mnt")
+            Row(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally)) {
+                Surface(onClick = { showQueue = true }, shape = RoundedCornerShape(50), color = Color.White.copy(alpha = 0.10f)) {
+                    Row(Modifier.defaultMinSize(minHeight = 48.dp).padding(horizontal = 14.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.AutoMirrored.Filled.QueueMusic, null, Modifier.size(18.dp), tint = Color.White)
+                        Spacer(Modifier.width(7.dp))
+                        Text("Antrean ${state.queue.size}", style = MaterialTheme.typography.labelLarge, color = Color.White)
+                    }
+                }
+                Surface(onClick = { showTimer = true }, shape = RoundedCornerShape(50), color = Color.White.copy(alpha = 0.10f)) {
+                    Row(Modifier.defaultMinSize(minHeight = 48.dp).padding(horizontal = 14.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Bedtime, null, Modifier.size(18.dp), tint = Color.White)
+                        Spacer(Modifier.width(7.dp))
+                        Text(if (sleepRemainingMs == null) "Timer" else "${(sleepRemainingMs + 59_999) / 60_000} mnt", style = MaterialTheme.typography.labelLarge, color = Color.White)
+                    }
                 }
             }
 

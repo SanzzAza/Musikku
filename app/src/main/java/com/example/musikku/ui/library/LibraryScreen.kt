@@ -2,6 +2,9 @@ package com.example.musikku.ui.library
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -20,6 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.PushPin
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -28,6 +32,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,6 +53,7 @@ fun LibraryScreen(onOpenPlaylist: (String) -> Unit) {
     val liked by AppModule.favorites.items.collectAsStateWithLifecycle()
     val playlists by AppModule.playlists.items.collectAsStateWithLifecycle()
     var creating by remember { mutableStateOf(false) }
+    var filter by rememberSaveable { mutableStateOf("Semua") }
 
     Column(Modifier.fillMaxSize().statusBarsPadding()) {
         Row(
@@ -56,12 +62,17 @@ fun LibraryScreen(onOpenPlaylist: (String) -> Unit) {
         ) {
             Text("Koleksi Kamu", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.weight(1f))
             IconButton(onClick = { creating = true }) { Icon(Icons.Default.Add, "Buat playlist", Modifier.size(30.dp)) }
+            BackupControls()
         }
 
-        BackupControls()
+        Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf("Semua", "Playlist", "Disukai").forEach { option ->
+                FilterChip(selected = filter == option, onClick = { filter = option }, label = { Text(option) })
+            }
+        }
 
         LazyColumn(contentPadding = PaddingValues(bottom = 24.dp)) {
-            item {
+            if (filter != "Playlist") item {
                 LibraryRow(
                     title = "Lagu yang Disukai",
                     subtitle = "${liked.size} lagu",
@@ -77,14 +88,14 @@ fun LibraryScreen(onOpenPlaylist: (String) -> Unit) {
                     ) { Icon(Icons.Default.Favorite, null, tint = Color.White) }
                 }
             }
-            items(playlists, key = { it.id }) { p ->
+            if (filter != "Disukai") items(playlists, key = { it.id }) { p ->
                 LibraryRow(
                     title = p.name,
                     subtitle = "Playlist • ${p.songs.size} lagu",
                     onClick = { onOpenPlaylist(p.id) }
                 ) { PlaylistCover(p, 64.dp) }
             }
-            item {
+            if (filter != "Disukai") item {
                 LibraryRow(title = "Buat playlist", subtitle = null, onClick = { creating = true }) {
                     Box(
                         Modifier.size(64.dp).clip(RoundedCornerShape(6.dp)).background(Color(0xFF2A2A2E)),
