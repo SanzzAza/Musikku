@@ -18,6 +18,7 @@ import com.example.musikku.data.lyrics.Lyrics
 import com.example.musikku.data.ytmusic.AlbumRef
 import com.example.musikku.data.ytmusic.ArtistRef
 import com.example.musikku.data.ytmusic.SongItem
+import com.example.musikku.data.ytmusic.StreamResolver
 import com.google.common.util.concurrent.ListenableFuture
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -36,6 +37,8 @@ sealed interface LyricsUiState {
     data class Loaded(val lyrics: Lyrics) : LyricsUiState
 }
 
+data class QueueEntry(val index: Int, val song: SongItem)
+
 data class NowPlaying(
     val song: SongItem? = null,
     val isPlaying: Boolean = false,
@@ -47,6 +50,8 @@ data class NowPlaying(
     val shuffle: Boolean = false,
     val repeatMode: Int = Player.REPEAT_MODE_OFF,
     val error: String? = null,
+    val queue: List<QueueEntry> = emptyList(),
+    val currentQueueIndex: Int = -1,
 ) {
     val hasMedia: Boolean get() = song != null
     val progress: Float get() = if (durationMs > 0) (positionMs.toFloat() / durationMs).coerceIn(0f, 1f) else 0f
@@ -173,8 +178,13 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     private suspend fun fillRadioQueue(song: SongItem) {
-        val related = runCatching { AppModule.ytMusic.radio(song.id) }.getOrDefault(emptyList())
-            .filter { it.id != song.id }
+        val related = try {
+            AppModule.ytMusic.radio(song.id)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            emptyList()
+        }.filter { it.id != song.id }
         val c = controller ?: return
         if (related.isEmpty() || c.currentMediaItem?.mediaId != song.id) return
         related.forEach { songCache[it.id] = it }
@@ -219,6 +229,36 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
     fun seekTo(positionMs: Long) {
         controller?.seekTo(positionMs)
         _state.update { it.copy(positionMs = positionMs) }
+    }
+
+    fun playQueueItem(index: Int) {
+        val c = controller ?: return
+        if (index !in 0 until c.mediaItemCount) return
+        c.seekTo(index, 0L)
+        if (c.playbackState == Player.STATE_IDLE) c.prepare()
+        c.play()
+    }
+
+    fun removeQueueItem(index: Int) {
+        val c = controller ?: return
+        if (index !in 0 until c.mediaItemCount || index == c.currentMediaItemIndex) return
+        c.removeMediaItem(index)
+    }
+
+    fun moveQueueItem(index: Int, direction: Int) {
+        val c = controller ?: return
+        val target = index + direction
+        if (direction !in listOf(-1, 1) || index !in 0 until c.mediaItemCount || target !in 0 until c.mediaItemCount) return
+        c.moveMediaItem(index, target)
+    }
+
+    fun retryPlayback() {
+        val c = controller ?: return
+        consecutiveErrors = 0
+        c.currentMediaItem?.mediaId?.let(StreamResolver::invalidate)
+        _state.update { it.copy(error = null) }
+        c.prepare()
+        c.play()
     }
 
     fun toggleShuffle() { controller?.let { it.shuffleModeEnabled = !it.shuffleModeEnabled } }
@@ -280,6 +320,11 @@ class PlayerViewModel(app: Application) : AndroidViewModel(app) {
                 hasPrevious = c.hasPreviousMediaItem() || c.currentPosition > 3000,
                 shuffle = c.shuffleModeEnabled,
                 repeatMode = c.repeatMode,
+                queue = (0 until c.mediaItemCount).map { index ->
+                    val media = c.getMediaItemAt(index)
+                    QueueEntry(index, songCache[media.mediaId] ?: media.toSong())
+                },
+                currentQueueIndex = c.currentMediaItemIndex,
             )
         }
         loadLyricsFor(_state.value.song)

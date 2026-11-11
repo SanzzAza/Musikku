@@ -56,6 +56,8 @@ class PlaybackService : MediaSessionService() {
             .setHandleAudioBecomingNoisy(true) // pause saat headset dicabut
             .build()
 
+        SleepTimer.attach(player)
+
         // Siapkan URL lagu berikutnya lebih awal supaya perpindahan lagu mulus
         player.addListener(object : Player.Listener {
             override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
@@ -97,6 +99,7 @@ class PlaybackService : MediaSessionService() {
     }
 
     override fun onDestroy() {
+        SleepTimer.detach()
         mediaSession?.run {
             player.release()
             release()

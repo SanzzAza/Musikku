@@ -53,6 +53,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -90,9 +91,20 @@ fun PlayerScreen(
     onArtistClick: (String) -> Unit,
     lyrics: LyricsUiState,
     onRetryLyrics: () -> Unit,
+    sleepRemainingMs: Long?,
+    onSetSleepTimer: (Int) -> Unit,
+    onCancelSleepTimer: () -> Unit,
+    onPlayQueueItem: (Int) -> Unit,
+    onRemoveQueueItem: (Int) -> Unit,
+    onMoveQueueItem: (Int, Int) -> Unit,
+    onRetryPlayback: () -> Unit,
 ) {
     val song = state.song
     var showLyrics by rememberSaveable { mutableStateOf(false) }
+    var showTimer by rememberSaveable { mutableStateOf(false) }
+    var showQueue by rememberSaveable { mutableStateOf(false) }
+    if (showTimer) SleepTimerDialog(sleepRemainingMs, onSetSleepTimer, onCancelSleepTimer) { showTimer = false }
+    if (showQueue) QueueDialog(state, onPlayQueueItem, onRemoveQueueItem, onMoveQueueItem) { showQueue = false }
     BackHandler(enabled = showLyrics) { showLyrics = false }
     val cover = song?.thumbnail
 
@@ -248,6 +260,13 @@ fun PlayerScreen(
                 }
             }
 
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+                TextButton(onClick = { showQueue = true }) { Text("Antrean (${state.queue.size})") }
+                TextButton(onClick = { showTimer = true }) {
+                    Text(if (sleepRemainingMs == null) "Sleep timer" else "Timer: ${(sleepRemainingMs + 59_999) / 60_000} mnt")
+                }
+            }
+
             // Hanya tampil kalau ada error
             state.error?.let {
                 Text(
@@ -256,6 +275,7 @@ fun PlayerScreen(
                     color = MaterialTheme.colorScheme.error,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
+                TextButton(onClick = onRetryPlayback) { Text("Coba putar lagi") }
             }
             Spacer(Modifier.height(16.dp))
         }

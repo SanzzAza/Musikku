@@ -43,6 +43,9 @@ object StreamResolver {
         }
     }
 
+    /** Buang URL lama agar percobaan ulang mengambil URL stream baru. */
+    fun invalidate(videoId: String) { cache.remove(videoId) }
+
     fun audioUrl(videoId: String): String {
         cache[videoId]?.let { (url, at) -> if (System.currentTimeMillis() - at < TTL_MS) return url }
         ensureInit()
