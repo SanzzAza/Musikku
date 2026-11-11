@@ -30,3 +30,4 @@ Uji perangkat: ekspor, hapus/tambah data dan impor; uji file rusak dan terlalu b
 - Player memakai tint yang disampel dari cover, dengan fallback warna saat cover tidak tersedia; tombol antrean dan timer tetap dapat dijangkau. Mini player dirapikan; favorit tetap tersedia di player penuh.
 - Koleksi diberi filter dan menu opsi untuk backup/impor.
 - Uji manual di layar kecil, font besar, Android di bawah/di atas 12, cover gagal dimuat, kondisi offline, pembacaan layar, player, mini player, antrean, timer, lirik, filter koleksi, serta backup/impor.
+- GitHub Actions menyimpan APK debug sebagai artifact selama 7 hari. APK debug biasanya bertanda tangan berbeda dari APK rilis: gunakan perangkat atau profil terpisah untuk tes, jangan uninstall APK rilis jika data lokal belum dibackup.
