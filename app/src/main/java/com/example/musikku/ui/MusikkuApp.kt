@@ -139,8 +139,6 @@ fun MusikkuApp(playerVm: PlayerViewModel = viewModel()) {
                             onClick = { nav.navigate(Routes.PLAYER) { launchSingleTop = true } },
                             onPlayPause = playerVm::togglePlayPause,
                             onNext = playerVm::next,
-                            isLiked = liked.any { it.id == currentId },
-                            onToggleLike = playerVm::toggleFavorite,
                         )
                     }
                     BottomBar(nav, route)
@@ -154,7 +152,7 @@ fun MusikkuApp(playerVm: PlayerViewModel = viewModel()) {
             modifier = Modifier.padding(padding)
         ) {
             composable(Routes.HOME) {
-                HomeScreen(currentId, play, openItem, openCollection)
+                HomeScreen(currentId, play, openItem, openCollection, now, onOpenPlayer = { nav.navigate(Routes.PLAYER) { launchSingleTop = true } })
             }
             composable(Routes.SEARCH) {
                 SearchScreen(currentId, playerVm::playWithRadio, openArtist, openCollection)

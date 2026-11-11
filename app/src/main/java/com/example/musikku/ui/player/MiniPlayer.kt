@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.AddCircleOutline
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.SkipNext
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -27,6 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -39,23 +41,21 @@ fun MiniPlayer(
     onClick: () -> Unit,
     onPlayPause: () -> Unit,
     onNext: () -> Unit,
-    isLiked: Boolean,
-    onToggleLike: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val song = state.song ?: return
     Column(
         modifier
-            .padding(horizontal = 8.dp, vertical = 4.dp)
-            .clip(RoundedCornerShape(8.dp))
-            .background(Color(0xFF2A2A30))
+            .padding(horizontal = 12.dp, vertical = 6.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .background(Brush.horizontalGradient(listOf(Color(0xFF293C37), Color(0xFF212725))))
             .clickable(onClick = onClick)
     ) {
         Row(
             Modifier.fillMaxWidth().padding(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Artwork(song.thumbnail, Modifier.size(42.dp), shape = RoundedCornerShape(4.dp))
+            Artwork(song.thumbnail, Modifier.size(46.dp), shape = RoundedCornerShape(8.dp))
             Spacer(Modifier.width(10.dp))
             Column(Modifier.weight(1f)) {
                 Text(
@@ -68,15 +68,9 @@ fun MiniPlayer(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-            IconButton(onClick = onToggleLike) {
-                Icon(
-                    if (isLiked) Icons.Default.CheckCircle else Icons.Default.AddCircleOutline,
-                    if (isLiked) "Hapus dari Koleksi" else "Simpan ke Koleksi",
-                    tint = if (isLiked) MaterialTheme.colorScheme.primary else Color.White
-                )
-            }
             IconButton(onClick = onPlayPause) {
-                Icon(
+                if (state.isBuffering) CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp, color = Color.White)
+                else Icon(
                     if (state.isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
                     if (state.isPlaying) "Jeda" else "Putar"
                 )
@@ -87,8 +81,8 @@ fun MiniPlayer(
         }
         LinearProgressIndicator(
             progress = { state.progress },
-            modifier = Modifier.fillMaxWidth().height(2.dp).padding(horizontal = 8.dp),
-            color = Color.White,
+            modifier = Modifier.fillMaxWidth().height(2.dp).padding(horizontal = 10.dp),
+            color = MaterialTheme.colorScheme.primary,
             trackColor = Color.White.copy(alpha = 0.2f),
             drawStopIndicator = {},
         )

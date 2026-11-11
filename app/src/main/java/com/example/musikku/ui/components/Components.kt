@@ -208,7 +208,7 @@ fun ItemCard(item: YTItem, onClick: () -> Unit, modifier: Modifier = Modifier, s
         Artwork(
             item.thumbnail,
             Modifier.size(size),
-            shape = if (isArtist) CircleShape else RoundedCornerShape(8.dp),
+            shape = if (isArtist) CircleShape else RoundedCornerShape(12.dp),
             placeholder = if (isArtist) Icons.Default.Person else Icons.Default.MusicNote
         )
         Spacer(Modifier.height(8.dp))

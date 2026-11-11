@@ -3,9 +3,16 @@ package com.example.musikku.ui.library
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -30,6 +37,7 @@ fun BackupControls() {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var confirmImport by remember { mutableStateOf(false) }
+    var menuOpen by remember { mutableStateOf(false) }
     var busy by remember { mutableStateOf(false) }
     fun toast(text: String) = Toast.makeText(context, text, Toast.LENGTH_LONG).show()
 
@@ -71,9 +79,12 @@ fun BackupControls() {
             }
         }
     }
-    Row(Modifier.fillMaxWidth().padding(horizontal = 8.dp)) {
-        TextButton(enabled = !busy, onClick = { export.launch("Musikku-backup.json") }) { Text("Backup koleksi") }
-        TextButton(enabled = !busy, onClick = { confirmImport = true }) { Text("Impor backup") }
+    Box {
+        IconButton(onClick = { menuOpen = true }, enabled = !busy) { Icon(Icons.Default.MoreVert, "Opsi koleksi") }
+        DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+            DropdownMenuItem(text = { Text("Backup koleksi") }, onClick = { menuOpen = false; export.launch("Musikku-backup.json") })
+            DropdownMenuItem(text = { Text("Impor backup") }, onClick = { menuOpen = false; confirmImport = true })
+        }
     }
     if (confirmImport) {
         AlertDialog(
