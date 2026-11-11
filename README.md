@@ -12,7 +12,10 @@ Aplikasi streaming musik ala Spotify / YouTube Music — **lagu diputar full** (
 - **Lagu full** (bukan preview), kualitas audio tertinggi yang tersedia
 - **Lirik tersinkron** ala Spotify (sumber: [LRCLIB](https://lrclib.net))
 - **Putar di background** + notifikasi media & kontrol lockscreen
-- **Koleksi**: lagu yang disukai tersimpan di perangkat
+- **Koleksi**: lagu yang disukai dan playlist buatan sendiri tersimpan di perangkat
+- **Antrean**: lihat daftar lagu, putar lagu pilihan, pindahkan urutan, atau hapus lagu lain dari antrean. Saat acak aktif, urutan putar dapat berbeda dari urutan daftar.
+- **Sleep timer**: jeda musik setelah 15, 30, 45, atau 60 menit. Timer berjalan selama layanan pemutar aktif; timer dibatalkan jika layanan/proses dihentikan.
+- **Coba lagi**: ulangi pemutaran saat terjadi kesalahan
 
 ## 🧱 Tech Stack
 | Bagian | Library |
@@ -65,6 +68,8 @@ Setiap **push ke branch `main`** (atau klik *Run workflow* di tab **Actions**) a
 2. Membuat **GitHub Release** baru `v1.0.<nomor build>` berisi file APK
 
 Download APK terbaru: **Releases → Latest**.
+
+Rilis otomatis akan gagal jika salah satu secret signing belum disiapkan, agar tidak menerbitkan APK dengan debug key yang berbeda. Gunakan keystore yang sama seperti rilis sebelumnya agar APK bisa di-update tanpa uninstall.
 
 Secrets yang dipakai (Settings → Secrets and variables → Actions):
 `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`.

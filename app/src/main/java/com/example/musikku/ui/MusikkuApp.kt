@@ -45,6 +45,7 @@ import com.example.musikku.data.ytmusic.AlbumItem
 import com.example.musikku.data.ytmusic.ArtistItem
 import com.example.musikku.data.ytmusic.SongItem
 import com.example.musikku.data.ytmusic.YTItem
+import com.example.musikku.player.SleepTimer
 import com.example.musikku.player.PlayerViewModel
 import com.example.musikku.ui.collection.CollectionScreen
 import com.example.musikku.ui.artist.ArtistScreen
@@ -86,6 +87,7 @@ fun MusikkuApp(playerVm: PlayerViewModel = viewModel()) {
     val now by playerVm.state.collectAsStateWithLifecycle()
     val liked by AppModule.favorites.items.collectAsStateWithLifecycle()
     val lyrics by playerVm.lyrics.collectAsStateWithLifecycle()
+    val sleepRemaining by SleepTimer.remainingMs.collectAsStateWithLifecycle()
     val currentId = now.song?.id
 
     // Izin notifikasi (Android 13+) untuk notifikasi kontrol musik
@@ -204,6 +206,13 @@ fun MusikkuApp(playerVm: PlayerViewModel = viewModel()) {
                     },
                     lyrics = lyrics,
                     onRetryLyrics = playerVm::retryLyrics,
+                    sleepRemainingMs = sleepRemaining,
+                    onSetSleepTimer = SleepTimer::start,
+                    onCancelSleepTimer = SleepTimer::cancel,
+                    onPlayQueueItem = playerVm::playQueueItem,
+                    onRemoveQueueItem = playerVm::removeQueueItem,
+                    onMoveQueueItem = playerVm::moveQueueItem,
+                    onRetryPlayback = playerVm::retryPlayback,
                 )
             }
         }
