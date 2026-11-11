@@ -58,6 +58,8 @@ fun LibraryScreen(onOpenPlaylist: (String) -> Unit) {
             IconButton(onClick = { creating = true }) { Icon(Icons.Default.Add, "Buat playlist", Modifier.size(30.dp)) }
         }
 
+        BackupControls()
+
         LazyColumn(contentPadding = PaddingValues(bottom = 24.dp)) {
             item {
                 LibraryRow(

@@ -41,6 +41,17 @@ class PlaylistStore(context: Context) {
             else p.copy(name = p.name ?: "Playlist", songs = (p.songs ?: emptyList()).filter { it != null && it.id.isNotBlank() })
         }
 
+    /** Merge berdasarkan ID playlist dan lagu; nama serta urutan lokal dipertahankan. */
+    fun merge(imported: List<UserPlaylist>) {
+        val byId = imported.associateBy { it.id }
+        val currentIds = _items.value.map { it.id }.toSet()
+        val merged = _items.value.map { local ->
+            val incoming = byId[local.id]
+            if (incoming == null) local else local.copy(songs = (local.songs + incoming.songs).distinctBy { it.id })
+        } + imported.filter { it.id !in currentIds }
+        save(merged)
+    }
+
     fun get(id: String): UserPlaylist? = _items.value.firstOrNull { it.id == id }
 
     /** Buat playlist baru (opsional langsung berisi lagu). Mengembalikan playlist yang dibuat. */

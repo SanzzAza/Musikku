@@ -3,6 +3,8 @@ package com.example.musikku.player
 import android.app.PendingIntent
 import android.content.Intent
 import android.net.Uri
+import android.os.Handler
+import android.os.Looper
 import androidx.annotation.OptIn
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
@@ -29,6 +31,14 @@ import java.util.concurrent.Executors
 class PlaybackService : MediaSessionService() {
 
     private var mediaSession: MediaSession? = null
+    private val snapshotHandler = Handler(Looper.getMainLooper())
+    private lateinit var snapshot: PlaybackSnapshot
+    private val saveTick = object : Runnable {
+        override fun run() {
+            mediaSession?.player?.let { if (it.isPlaying) snapshot.save(it) }
+            snapshotHandler.postDelayed(this, 5_000L)
+        }
+    }
     private val prefetchExecutor = Executors.newSingleThreadExecutor()
 
     override fun onCreate() {
@@ -56,6 +66,17 @@ class PlaybackService : MediaSessionService() {
             .setHandleAudioBecomingNoisy(true) // pause saat headset dicabut
             .build()
 
+        snapshot = PlaybackSnapshot(this)
+        snapshot.restore(player)
+        player.addListener(object : Player.Listener {
+            override fun onEvents(player: Player, events: Player.Events) {
+                if (events.containsAny(Player.EVENT_TIMELINE_CHANGED, Player.EVENT_MEDIA_ITEM_TRANSITION,
+                        Player.EVENT_POSITION_DISCONTINUITY, Player.EVENT_PLAY_WHEN_READY_CHANGED,
+                        Player.EVENT_SHUFFLE_MODE_ENABLED_CHANGED, Player.EVENT_REPEAT_MODE_CHANGED)) {
+                    snapshot.save(player)
+                }
+            }
+        })
         SleepTimer.attach(player)
 
         // Siapkan URL lagu berikutnya lebih awal supaya perpindahan lagu mulus
@@ -75,6 +96,7 @@ class PlaybackService : MediaSessionService() {
         mediaSession = MediaSession.Builder(this, player)
             .setSessionActivity(openAppIntent)
             .build()
+        snapshotHandler.postDelayed(saveTick, 5_000L)
     }
 
     private fun resolve(dataSpec: DataSpec): DataSpec {
@@ -99,8 +121,10 @@ class PlaybackService : MediaSessionService() {
     }
 
     override fun onDestroy() {
+        snapshotHandler.removeCallbacks(saveTick)
         SleepTimer.detach()
         mediaSession?.run {
+            snapshot.save(player)
             player.release()
             release()
         }
