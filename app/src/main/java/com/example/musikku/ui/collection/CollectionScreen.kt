@@ -1,10 +1,12 @@
 package com.example.musikku.ui.collection
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,19 +16,20 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
-import androidx.compose.foundation.layout.Row
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Icon
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
-import com.example.musikku.ui.playlist.PlaylistPicker
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -40,6 +43,12 @@ import com.example.musikku.ui.components.ErrorBox
 import com.example.musikku.ui.components.LoadingBox
 import com.example.musikku.ui.components.PlayShuffleButtons
 import com.example.musikku.ui.components.SongRow
+import com.example.musikku.ui.player.rememberCoverPalette
+import com.example.musikku.ui.playlist.PlaylistPicker
+import com.example.musikku.ui.theme.LocalBottomOverlayPadding
+import com.example.musikku.ui.theme.WarmHairline
+import com.example.musikku.ui.theme.WarmInk
+import com.example.musikku.ui.theme.WarmMuted
 
 /** Halaman album ATAU playlist YouTube Music. */
 @Composable
@@ -56,54 +65,69 @@ fun CollectionScreen(
     val state by vm.state.collectAsStateWithLifecycle()
     val page = state.page
     val isAlbum = browseId.startsWith("MPRE")
+    val bottomPadding = LocalBottomOverlayPadding.current
+    val coverPalette = rememberCoverPalette(page?.thumbnail)
 
     Box(Modifier.fillMaxSize()) {
         when {
             state.loading && page == null -> LoadingBox()
             state.error != null && page == null ->
                 ErrorBox(state.error!!, onRetry = { vm.load(browseId, force = true) })
-            page != null -> LazyColumn(contentPadding = PaddingValues(bottom = 24.dp)) {
+            page != null -> LazyColumn(contentPadding = PaddingValues(bottom = bottomPadding + 20.dp)) {
                 item {
                     Column(
                         Modifier
                             .fillMaxWidth()
-                            .background(Brush.verticalGradient(listOf(Color(0xFF3F3F46), MaterialTheme.colorScheme.background)))
+                            .background(
+                                Brush.verticalGradient(
+                                    listOf(coverPalette.ambient.copy(alpha = 0.85f), MaterialTheme.colorScheme.background)
+                                )
+                            )
                             .statusBarsPadding()
-                            .padding(top = 56.dp, bottom = 12.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                            .padding(top = 56.dp, bottom = 16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
-                        Artwork(page.thumbnail, Modifier.size(230.dp))
+                        Box(
+                            modifier = Modifier
+                                .shadow(20.dp, RoundedCornerShape(22.dp))
+                                .clip(RoundedCornerShape(22.dp))
+                                .border(1.dp, WarmHairline, RoundedCornerShape(22.dp))
+                                .padding(6.dp),
+                        ) {
+                            Artwork(page.thumbnail, Modifier.size(220.dp), shape = RoundedCornerShape(16.dp))
+                        }
                     }
                 }
                 item {
-                    Column(Modifier.padding(horizontal = 16.dp)) {
-                        Text(page.title, style = MaterialTheme.typography.headlineMedium)
+                    Column(Modifier.padding(horizontal = 18.dp)) {
+                        Text(page.title, style = MaterialTheme.typography.headlineMedium, color = WarmInk)
                         Spacer(Modifier.height(6.dp))
                         page.author?.takeIf { it.name.isNotBlank() }?.let { author ->
                             Text(
                                 author.name,
                                 fontWeight = FontWeight.Bold,
-                                modifier = Modifier.clickable(enabled = author.id != null) { author.id?.let(onArtistClick) }
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.clickable(enabled = author.id != null) { author.id?.let(onArtistClick) },
                             )
                         }
                         Text(
                             listOf(page.subtitle, page.secondSubtitle).filter { it.isNotBlank() }.joinToString(" • "),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            style = MaterialTheme.typography.bodyMedium
+                            color = WarmMuted,
+                            style = MaterialTheme.typography.bodyMedium,
                         )
                     }
                 }
                 if (page.songs.isNotEmpty()) {
                     item {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(top = 6.dp)) {
                             IconButton(onClick = { PlaylistPicker.open(page.songs) }, modifier = Modifier.padding(start = 8.dp)) {
-                                Icon(Icons.AutoMirrored.Filled.PlaylistAdd, "Simpan ke playlist", Modifier.size(28.dp))
+                                Icon(Icons.AutoMirrored.Filled.PlaylistAdd, "Simpan ke playlist", Modifier.size(26.dp), tint = WarmInk)
                             }
                             Spacer(Modifier.weight(1f))
                             PlayShuffleButtons(
                                 onPlay = { onPlaySongs(page.songs, 0) },
                                 onShuffle = { onShuffle(page.songs) },
-                                modifier = Modifier.padding(vertical = 8.dp)
+                                modifier = Modifier.padding(vertical = 8.dp),
                             )
                         }
                     }
@@ -111,8 +135,8 @@ fun CollectionScreen(
                     item {
                         Text(
                             "Playlist ini kosong.",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+                            color = WarmMuted,
+                            modifier = Modifier.padding(horizontal = 18.dp, vertical = 12.dp),
                         )
                     }
                 }
@@ -123,11 +147,11 @@ fun CollectionScreen(
                         showArtwork = !isAlbum,
                         showAlbum = !isAlbum,
                         isCurrent = song.id == currentSongId,
-                        onClick = { onPlaySongs(page.songs, i) }
+                        onClick = { onPlaySongs(page.songs, i) },
                     )
                 }
             }
         }
-        BackButton(onBack, Modifier.statusBarsPadding().padding(8.dp))
+        BackButton(onBack, Modifier.statusBarsPadding().padding(10.dp))
     }
 }

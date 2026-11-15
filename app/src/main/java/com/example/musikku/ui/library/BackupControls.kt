@@ -4,16 +4,14 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -22,12 +20,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.dp
 import com.example.musikku.AppModule
 import com.example.musikku.data.local.CollectionBackup
 import com.example.musikku.data.local.CollectionBackupCodec
+import com.example.musikku.ui.theme.WarmInk
+import com.example.musikku.ui.theme.WarmMuted
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -80,19 +79,46 @@ fun BackupControls() {
         }
     }
     Box {
-        IconButton(onClick = { menuOpen = true }, enabled = !busy) { Icon(Icons.Default.MoreVert, "Opsi koleksi") }
-        DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
-            DropdownMenuItem(text = { Text("Backup koleksi") }, onClick = { menuOpen = false; export.launch("Musikku-backup.json") })
-            DropdownMenuItem(text = { Text("Impor backup") }, onClick = { menuOpen = false; confirmImport = true })
+        IconButton(onClick = { menuOpen = true }, enabled = !busy) {
+            Icon(Icons.Rounded.MoreVert, "Opsi pustaka", tint = WarmInk)
+        }
+        DropdownMenu(
+            expanded = menuOpen,
+            onDismissRequest = { menuOpen = false },
+            containerColor = Color(0xFF211D1A),
+        ) {
+            DropdownMenuItem(
+                text = { Text("Backup koleksi", color = WarmInk) },
+                onClick = { menuOpen = false; export.launch("Musikku-backup.json") },
+            )
+            DropdownMenuItem(
+                text = { Text("Impor backup", color = WarmInk) },
+                onClick = { menuOpen = false; confirmImport = true },
+            )
         }
     }
     if (confirmImport) {
         AlertDialog(
             onDismissRequest = { confirmImport = false },
-            title = { Text("Impor koleksi?") },
-            text = { Text("Favorit dan lagu di playlist akan digabungkan dengan koleksi yang ada. Playlist dengan ID yang sama mempertahankan nama dan urutan lokal. File harus berupa backup Musikku.") },
-            confirmButton = { TextButton(onClick = { confirmImport = false; importLauncher.launch(arrayOf("application/json", "text/plain", "application/octet-stream")) }) { Text("Pilih file") } },
-            dismissButton = { TextButton(onClick = { confirmImport = false }) { Text("Batal") } },
+            containerColor = Color(0xFF1B1816),
+            title = { Text("Impor koleksi?", color = WarmInk) },
+            text = {
+                Text(
+                    "Favorit dan lagu di playlist akan digabungkan dengan koleksi yang ada. Playlist dengan ID yang sama mempertahankan nama dan urutan lokal.",
+                    color = WarmMuted,
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        confirmImport = false
+                        importLauncher.launch(arrayOf("application/json", "text/plain", "application/octet-stream"))
+                    }
+                ) { Text("Pilih file", color = MaterialTheme.colorScheme.primary) }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmImport = false }) { Text("Batal", color = WarmMuted) }
+            },
         )
     }
 }

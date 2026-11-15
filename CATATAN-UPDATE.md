@@ -31,3 +31,11 @@ Uji perangkat: ekspor, hapus/tambah data dan impor; uji file rusak dan terlalu b
 - Koleksi diberi filter dan menu opsi untuk backup/impor.
 - Uji manual di layar kecil, font besar, Android di bawah/di atas 12, cover gagal dimuat, kondisi offline, pembacaan layar, player, mini player, antrean, timer, lirik, filter koleksi, serta backup/impor.
 - GitHub Actions menyimpan APK debug sebagai artifact selama 7 hari. APK debug biasanya bertanda tangan berbeda dari APK rilis: gunakan perangkat atau profil terpisah untuk tes, jangan uninstall APK rilis jika data lokal belum dibackup.
+
+## Update UI Liquid Glass & Editorial (gaya Auralys)
+- **Dua tampilan**: **Liquid Glass** (default, permukaan kaca buram dengan blur backdrop nyata via Haze di Android 12+ dan fallback ringan di Android 7–11) dan **Editorial** (matte obsidian hangat dengan garis tipis tegas). Bisa diganti kapan saja lewat ikon Pengaturan di Beranda atau Pustaka.
+- **Navbar lensa kaca**: navbar melayang dengan indikator lensa bercahaya yang bisa diketuk atau digeser (drag) secara horizontal antar tab, serta opsi melipat otomatis menjadi tombol lingkaran saat scroll dengan mini player menempel di sebelahnya.
+- **Tema ikut cover**: palet warna aksen & kilau ambient latar otomatis beradaptasi dengan warna sampul lagu yang sedang diputar (fallback terakota hangat bila sampul netral atau opsi dimatikan).
+- **Beranda baru**: chip filter suasana (Bersantai, Senang, Pesta, Perjalanan, Fokus, Galau), grid **Panggilan cepat** 3×3 dengan kartu dadu acak cepat & indikator halaman, serta **Pilihan cepat** dengan tombol Putar semua dan sheet Riwayat putar.
+- **Pemutar & Lirik Editorial**: header "SEDANG DIPUTAR" dengan judul miring, bingkai ganda sampul album, tombol Play/Pause squircle terakota, seek bar modern, dock 4 aksi bawah (**LIRIK • ANTREAN • BAGIKAN • WAKTU TIDUR**), lirik tersinkron bergaya serif rata tengah, serta **Kartu Bagikan Lagu** (ekspor gambar PNG siap Story atau bagikan teks).
+- **Gaya huruf & saklar iOS**: 4 pilihan gaya huruf (Modern, Editorial, Klasik Serif, Studio) dan saklar kaca pegas di Pengaturan Tampilan.

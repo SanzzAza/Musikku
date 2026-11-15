@@ -1,6 +1,7 @@
 package com.example.musikku.ui.artist
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -13,7 +14,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -44,6 +45,9 @@ import com.example.musikku.ui.components.SectionTitle
 import com.example.musikku.ui.components.SectionView
 import com.example.musikku.ui.components.SongRow
 import com.example.musikku.ui.components.isOpenableCollection
+import com.example.musikku.ui.theme.LocalBottomOverlayPadding
+import com.example.musikku.ui.theme.WarmInk
+import com.example.musikku.ui.theme.WarmMuted
 
 @Composable
 fun ArtistScreen(
@@ -59,6 +63,7 @@ fun ArtistScreen(
     LaunchedEffect(artistId) { vm.load(artistId) }
     val state by vm.state.collectAsStateWithLifecycle()
     val page = state.page
+    val bottomPadding = LocalBottomOverlayPadding.current
     var descExpanded by rememberSaveable { mutableStateOf(false) }
 
     Box(Modifier.fillMaxSize()) {
@@ -69,29 +74,29 @@ fun ArtistScreen(
             page != null -> {
                 val top = page.topSongs
                 val topSongs = top?.items?.filterIsInstance<SongItem>().orEmpty()
-                LazyColumn(contentPadding = PaddingValues(bottom = 24.dp)) {
-                    // Header foto artis
+                LazyColumn(contentPadding = PaddingValues(bottom = bottomPadding + 20.dp)) {
                     item {
-                        Box(Modifier.fillMaxWidth().height(360.dp)) {
+                        Box(Modifier.fillMaxWidth().height(340.dp)) {
                             AsyncImage(
                                 model = page.thumbnail,
                                 contentDescription = null,
                                 contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize()
+                                modifier = Modifier.fillMaxSize(),
                             )
                             Box(
                                 Modifier.fillMaxSize().background(
                                     Brush.verticalGradient(
-                                        0f to Color.Black.copy(alpha = 0.3f),
-                                        0.45f to Color.Transparent,
-                                        1f to MaterialTheme.colorScheme.background
+                                        0f to Color.Black.copy(alpha = 0.35f),
+                                        0.48f to Color.Transparent,
+                                        1f to MaterialTheme.colorScheme.background,
                                     )
                                 )
                             )
                             Text(
                                 page.name,
                                 style = MaterialTheme.typography.headlineLarge,
-                                modifier = Modifier.align(Alignment.BottomStart).padding(16.dp)
+                                color = WarmInk,
+                                modifier = Modifier.align(Alignment.BottomStart).padding(18.dp),
                             )
                         }
                     }
@@ -99,8 +104,9 @@ fun ArtistScreen(
                         item {
                             Text(
                                 "$subs subscriber",
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.padding(horizontal = 16.dp)
+                                color = WarmMuted,
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.padding(horizontal = 18.dp),
                             )
                         }
                     }
@@ -109,7 +115,7 @@ fun ArtistScreen(
                             PlayShuffleButtons(
                                 onPlay = { onPlaySongs(topSongs, 0) },
                                 onShuffle = { onShuffle(topSongs) },
-                                modifier = Modifier.padding(top = 8.dp)
+                                modifier = Modifier.padding(top = 12.dp),
                             )
                         }
                         item {
@@ -117,7 +123,7 @@ fun ArtistScreen(
                             SectionTitle(
                                 top?.title?.ifBlank { null } ?: "Lagu teratas",
                                 action = if (more != null) "Lihat semua" else null,
-                                onAction = more?.let { id -> { onOpenCollection(id) } }
+                                onAction = more?.let { id -> { onOpenCollection(id) } },
                             )
                         }
                         itemsIndexed(topSongs, key = { i, s -> "top-$i-${s.id}" }) { i, song ->
@@ -125,11 +131,10 @@ fun ArtistScreen(
                                 song = song,
                                 index = i + 1,
                                 isCurrent = song.id == currentSongId,
-                                onClick = { onPlaySongs(topSongs, i) }
+                                onClick = { onPlaySongs(topSongs, i) },
                             )
                         }
                     }
-                    // Album, Single & EP, Video, Playlist, Artis serupa, dll
                     val others = page.sections.filter { it !== top }
                     itemsIndexed(others, key = { i, s -> "sec-$i-${s.title}" }) { _, section ->
                         SectionView(section, currentSongId, onPlaySongs, onOpenItem, onOpenCollection)
@@ -141,18 +146,18 @@ fun ArtistScreen(
                                 desc,
                                 maxLines = if (descExpanded) Int.MAX_VALUE else 4,
                                 overflow = TextOverflow.Ellipsis,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                color = WarmMuted,
                                 style = MaterialTheme.typography.bodyMedium,
                                 modifier = Modifier
-                                    .padding(horizontal = 16.dp)
-                                    .clickable { descExpanded = !descExpanded }
+                                    .padding(horizontal = 18.dp)
+                                    .clickable { descExpanded = !descExpanded },
                             )
                         }
                     }
                 }
             }
         }
-        BackButton(onBack, Modifier.statusBarsPadding().padding(8.dp))
+        BackButton(onBack, Modifier.statusBarsPadding().padding(10.dp))
     }
 }
 
@@ -160,8 +165,11 @@ fun ArtistScreen(
 fun BackButton(onBack: () -> Unit, modifier: Modifier = Modifier) {
     IconButton(
         onClick = onBack,
-        modifier = modifier.clip(CircleShape).background(Color.Black.copy(alpha = 0.4f))
+        modifier = modifier
+            .clip(CircleShape)
+            .background(Color(0x99161311))
+            .border(1.dp, Color.White.copy(alpha = 0.20f), CircleShape),
     ) {
-        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Kembali", tint = Color.White)
+        Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Kembali", tint = WarmInk)
     }
 }

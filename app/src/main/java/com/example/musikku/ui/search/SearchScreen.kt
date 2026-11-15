@@ -1,8 +1,11 @@
 package com.example.musikku.ui.search
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,30 +25,27 @@ import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.AddCircleOutline
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.MusicNote
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Verified
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.AddCircleOutline
+import androidx.compose.material.icons.rounded.CheckCircle
+import androidx.compose.material.icons.rounded.Clear
+import androidx.compose.material.icons.rounded.Close
+import androidx.compose.material.icons.rounded.History
+import androidx.compose.material.icons.rounded.MusicNote
+import androidx.compose.material.icons.rounded.Person
+import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.rounded.Verified
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.ScrollableTabRow
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRowDefaults
-import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -61,12 +61,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.musikku.AppModule
@@ -78,20 +80,28 @@ import com.example.musikku.ui.components.Artwork
 import com.example.musikku.ui.components.ErrorBox
 import com.example.musikku.ui.components.ListItemRow
 import com.example.musikku.ui.components.SongRow
+import com.example.musikku.ui.theme.GlassChip
+import com.example.musikku.ui.theme.LocalBottomOverlayPadding
+import com.example.musikku.ui.theme.LocalUiPrefs
+import com.example.musikku.ui.theme.WarmFaint
+import com.example.musikku.ui.theme.WarmHairline
+import com.example.musikku.ui.theme.WarmInk
+import com.example.musikku.ui.theme.WarmMuted
+import com.example.musikku.ui.theme.WarmSurface
 
 private val browseCategories = listOf(
-    "Pop Indonesia" to Color(0xFFE13300),
-    "Dangdut" to Color(0xFF8C1932),
-    "K-Pop" to Color(0xFFE8115B),
-    "Hip Hop" to Color(0xFFBA5D07),
-    "Rock" to Color(0xFF477D95),
-    "Jazz" to Color(0xFF1E3264),
-    "Indie" to Color(0xFF608108),
-    "Lo-fi" to Color(0xFF503750),
-    "Lagu Galau" to Color(0xFF148A08),
-    "Band Indonesia" to Color(0xFF777777),
-    "Pop Sunda" to Color(0xFF8D67AB),
-    "Koplo" to Color(0xFFDC148C),
+    "Pop Indonesia" to Color(0xFFB64B30),
+    "Lagu Galau" to Color(0xFF7B3E52),
+    "Indie" to Color(0xFF476A55),
+    "Lo-fi" to Color(0xFF4A4469),
+    "K-Pop" to Color(0xFF9F3E68),
+    "Jazz" to Color(0xFF3A5472),
+    "Rock" to Color(0xFF7D4838),
+    "Hip Hop" to Color(0xFF8C5B2B),
+    "Band Indonesia" to Color(0xFF5A524C),
+    "Dangdut" to Color(0xFF853742),
+    "Pop Sunda" to Color(0xFF5A6D4A),
+    "Koplo" to Color(0xFF94445B),
 )
 
 @Composable
@@ -107,8 +117,10 @@ fun SearchScreen(
     val focus = LocalFocusManager.current
     val recents by AppModule.recents.items.collectAsStateWithLifecycle()
     val liked by AppModule.favorites.items.collectAsStateWithLifecycle()
+    val prefs = LocalUiPrefs.current
+    val bottomPadding = LocalBottomOverlayPadding.current
+    val accent = MaterialTheme.colorScheme.primary
 
-    // Mode cari aktif = kolom pencarian dibuka (seperti Spotify)
     var searchMode by rememberSaveable { mutableStateOf(false) }
     val focusRequester = remember { FocusRequester() }
     val exitSearch = {
@@ -118,7 +130,6 @@ fun SearchScreen(
     }
     BackHandler(enabled = searchMode) { exitSearch() }
 
-    // Setiap item yang dibuka dari pencarian masuk ke "Baru Diputar"
     val openSong: (SongItem) -> Unit = { AppModule.recents.add(it); focus.clearFocus(); onPlaySong(it) }
     val openArtist: (ArtistItem) -> Unit = { AppModule.recents.add(it); focus.clearFocus(); onArtistClick(it.id) }
     val openCollection: (AlbumItem) -> Unit = { AppModule.recents.add(it); focus.clearFocus(); onCollectionClick(it.id) }
@@ -126,27 +137,41 @@ fun SearchScreen(
     Column(Modifier.fillMaxSize().statusBarsPadding()) {
         if (!searchMode) {
             Text(
-                "Cari",
-                style = MaterialTheme.typography.headlineMedium,
-                modifier = Modifier.padding(start = 16.dp, top = 20.dp, bottom = 12.dp)
+                text = "Cari",
+                style = MaterialTheme.typography.headlineMedium.copy(fontSize = 28.sp),
+                color = WarmInk,
+                modifier = Modifier.padding(start = 18.dp, top = 16.dp, bottom = 12.dp),
             )
-            // Kotak putih: ketuk untuk membuka mode cari
+
+            // Kotak pencarian kaca / editorial hangat
+            val barShape = if (prefs.isGlass) CircleShape else RoundedCornerShape(14.dp)
             Row(
-                Modifier
+                modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(Color.White)
+                    .clip(barShape)
+                    .background(if (prefs.isGlass) Color.White.copy(alpha = 0.09f) else WarmSurface)
+                    .border(
+                        1.dp,
+                        if (prefs.isGlass) Color.White.copy(alpha = 0.20f) else WarmHairline,
+                        barShape,
+                    )
                     .clickable { searchMode = true }
-                    .padding(horizontal = 14.dp, vertical = 14.dp),
-                verticalAlignment = Alignment.CenterVertically
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Icon(Icons.Default.Search, null, tint = Color.Black)
+                Icon(Icons.Rounded.Search, null, tint = accent, modifier = Modifier.size(21.dp))
                 Spacer(Modifier.width(12.dp))
-                Text("Apa yang ingin kamu dengarkan?", color = Color.DarkGray, fontWeight = FontWeight.SemiBold)
+                Text(
+                    "Cari lagu, artis, album, atau lirik…",
+                    color = WarmMuted,
+                    style = MaterialTheme.typography.bodyLarge,
+                )
             }
+
             BrowseGrid(
                 history = history,
+                bottomPadding = bottomPadding + 16.dp,
                 onHistoryClick = { searchMode = true; vm.searchNow(it) },
                 onHistoryRemove = { AppModule.searchHistory.remove(it) },
                 onClearHistory = { AppModule.searchHistory.clear() },
@@ -158,40 +183,47 @@ fun SearchScreen(
         LaunchedEffect(Unit) { if (state.query.isBlank()) focusRequester.requestFocus() }
 
         Row(
-            Modifier
+            modifier = Modifier
                 .fillMaxWidth()
-                .background(Color(0xFF1F1F23))
-                .padding(start = 4.dp, end = 16.dp, top = 8.dp, bottom = 8.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .padding(start = 6.dp, end = 16.dp, top = 10.dp, bottom = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = exitSearch) {
-                Icon(Icons.AutoMirrored.Filled.ArrowBack, "Kembali")
+                Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Kembali", tint = WarmInk)
             }
+            val fieldShape = if (prefs.isGlass) CircleShape else RoundedCornerShape(14.dp)
             TextField(
                 value = state.query,
                 onValueChange = vm::onQueryChange,
-                placeholder = { Text("Apa yang ingin kamu dengarkan?", maxLines = 1) },
+                placeholder = { Text("Apa yang ingin kamu dengarkan?", maxLines = 1, color = WarmMuted) },
                 trailingIcon = {
                     if (state.query.isNotEmpty()) {
                         IconButton(onClick = { vm.onQueryChange(""); focusRequester.requestFocus() }) {
-                            Icon(Icons.Default.Clear, "Hapus")
+                            Icon(Icons.Rounded.Clear, "Hapus", tint = WarmMuted)
                         }
                     }
                 },
                 singleLine = true,
-                shape = RoundedCornerShape(50),
+                shape = fieldShape,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                 keyboardActions = KeyboardActions(onSearch = { vm.searchNow(); focus.clearFocus() }),
                 colors = TextFieldDefaults.colors(
-                    focusedContainerColor = Color(0xFF2E2E33),
-                    unfocusedContainerColor = Color(0xFF2E2E33),
-                    cursorColor = MaterialTheme.colorScheme.primary,
+                    focusedContainerColor = if (prefs.isGlass) Color.White.copy(alpha = 0.09f) else WarmSurface,
+                    unfocusedContainerColor = if (prefs.isGlass) Color.White.copy(alpha = 0.07f) else WarmSurface,
+                    focusedTextColor = WarmInk,
+                    unfocusedTextColor = WarmInk,
+                    cursorColor = accent,
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent,
-                    focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                    unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
                 ),
-                modifier = Modifier.weight(1f).focusRequester(focusRequester)
+                modifier = Modifier
+                    .weight(1f)
+                    .border(
+                        1.dp,
+                        if (prefs.isGlass) Color.White.copy(alpha = 0.18f) else WarmHairline,
+                        fieldShape,
+                    )
+                    .focusRequester(focusRequester),
             )
         }
 
@@ -199,6 +231,7 @@ fun SearchScreen(
             RecentList(
                 items = recents,
                 likedIds = liked.map { it.id }.toSet(),
+                bottomPadding = bottomPadding + 16.dp,
                 onOpen = { item ->
                     when (item) {
                         is SongItem -> openSong(item)
@@ -213,38 +246,39 @@ fun SearchScreen(
             return@Column
         }
 
-        // Saran kata kunci tampil selagi mengetik; begitu pencarian selesai diganti hasil.
         val showSuggestions = state.suggestions.isNotEmpty() && state.searchedQuery != state.query.trim()
         if (showSuggestions) {
-            SuggestionsList(state.suggestions, onClick = { vm.searchNow(it); focus.clearFocus() })
+            SuggestionsList(
+                suggestions = state.suggestions,
+                bottomPadding = bottomPadding + 16.dp,
+                onClick = { vm.searchNow(it); focus.clearFocus() },
+            )
             return@Column
         }
 
-        ScrollableTabRow(
-            selectedTabIndex = state.tab.ordinal,
-            edgePadding = 8.dp,
-            containerColor = Color.Transparent,
-            indicator = { positions ->
-                TabRowDefaults.SecondaryIndicator(
-                    Modifier.tabIndicatorOffset(positions[state.tab.ordinal]),
-                    color = MaterialTheme.colorScheme.primary
-                )
-            },
-            modifier = Modifier.padding(top = 8.dp)
+        // Tab hasil pencarian bergaya Glass Chips
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp, vertical = 6.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             SearchTab.entries.forEach { tab ->
-                Tab(
+                GlassChip(
+                    label = tab.label,
                     selected = state.tab == tab,
                     onClick = { vm.onTabSelected(tab) },
-                    text = { Text(tab.label, fontWeight = FontWeight.SemiBold) },
-                    selectedContentColor = MaterialTheme.colorScheme.primary,
-                    unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         }
 
         if (state.loading) {
-            LinearProgressIndicator(Modifier.fillMaxWidth().height(2.dp), color = MaterialTheme.colorScheme.primary)
+            LinearProgressIndicator(
+                modifier = Modifier.fillMaxWidth().height(2.dp),
+                color = accent,
+                trackColor = Color.Transparent,
+            )
         }
 
         when {
@@ -252,14 +286,14 @@ fun SearchScreen(
             state.searched && !state.loading && isEmpty(state) -> EmptyResult(state.query)
             else -> LazyColumn(
                 Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(vertical = 8.dp)
+                contentPadding = PaddingValues(top = 6.dp, bottom = bottomPadding + 16.dp),
             ) {
                 when (state.tab) {
                     SearchTab.SONGS -> items(state.songs, key = { it.id }) { song ->
                         SongRow(
                             song = song,
                             isCurrent = song.id == currentSongId,
-                            onClick = { openSong(song) }
+                            onClick = { openSong(song) },
                         )
                     }
                     SearchTab.ARTISTS -> items(state.artists, key = { it.id }) { artist ->
@@ -268,7 +302,7 @@ fun SearchScreen(
                             title = artist.title,
                             subtitle = "Artis • ${artist.subtitle}",
                             circle = true,
-                            onClick = { openArtist(artist) }
+                            onClick = { openArtist(artist) },
                         )
                     }
                     SearchTab.ALBUMS -> items(state.albums, key = { it.id }) { album ->
@@ -276,7 +310,7 @@ fun SearchScreen(
                             imageUrl = album.thumbnail,
                             title = album.title,
                             subtitle = album.subtitle,
-                            onClick = { openCollection(album) }
+                            onClick = { openCollection(album) },
                         )
                     }
                     SearchTab.PLAYLISTS -> items(state.playlists, key = { it.id }) { pl ->
@@ -284,7 +318,7 @@ fun SearchScreen(
                             imageUrl = pl.thumbnail,
                             title = pl.title,
                             subtitle = pl.subtitle,
-                            onClick = { openCollection(pl) }
+                            onClick = { openCollection(pl) },
                         )
                     }
                 }
@@ -304,31 +338,37 @@ private fun isEmpty(s: SearchUiState) = when (s.tab) {
 private fun EmptyResult(query: String) {
     Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("Tidak ada hasil untuk \"$query\"", style = MaterialTheme.typography.titleMedium)
+            Text("Tidak ada hasil untuk \"$query\"", style = MaterialTheme.typography.titleMedium, color = WarmInk)
             Text(
                 "Coba kata kunci lain atau periksa ejaan.",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 6.dp)
+                color = WarmMuted,
+                modifier = Modifier.padding(top = 6.dp),
             )
         }
     }
 }
 
-/** Daftar saran kata kunci ala YouTube Music — tap untuk langsung mencari. */
 @Composable
-private fun SuggestionsList(suggestions: List<String>, onClick: (String) -> Unit) {
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(vertical = 8.dp)) {
+private fun SuggestionsList(
+    suggestions: List<String>,
+    bottomPadding: androidx.compose.ui.unit.Dp,
+    onClick: (String) -> Unit,
+) {
+    LazyColumn(
+        Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(top = 6.dp, bottom = bottomPadding),
+    ) {
         items(suggestions, key = { it }) { text ->
             Row(
                 Modifier
                     .fillMaxWidth()
                     .clickable { onClick(text) }
                     .padding(horizontal = 20.dp, vertical = 12.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Icon(Icons.Default.Search, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                Icon(Icons.Rounded.Search, null, tint = WarmMuted, modifier = Modifier.size(20.dp))
                 Spacer(Modifier.width(12.dp))
-                Text(text, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(text, maxLines = 1, overflow = TextOverflow.Ellipsis, color = WarmInk)
             }
         }
     }
@@ -337,14 +377,18 @@ private fun SuggestionsList(suggestions: List<String>, onClick: (String) -> Unit
 @Composable
 private fun BrowseGrid(
     history: List<String>,
+    bottomPadding: androidx.compose.ui.unit.Dp,
     onHistoryClick: (String) -> Unit,
     onHistoryRemove: (String) -> Unit,
     onClearHistory: () -> Unit,
     onCategoryClick: (String) -> Unit,
 ) {
+    val prefs = LocalUiPrefs.current
+    val tileShape = RoundedCornerShape(if (prefs.isGlass) 18.dp else 13.dp)
+
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
-        contentPadding = PaddingValues(16.dp),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = bottomPadding),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -355,16 +399,17 @@ private fun BrowseGrid(
                         "Pencarian terakhir",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        modifier = Modifier.weight(1f)
+                        color = WarmInk,
+                        modifier = Modifier.weight(1f),
                     )
                     Text(
                         "Hapus semua",
                         style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier
-                            .clip(RoundedCornerShape(50))
+                            .clip(CircleShape)
                             .clickable(onClick = onClearHistory)
-                            .padding(horizontal = 10.dp, vertical = 6.dp)
+                            .padding(horizontal = 10.dp, vertical = 6.dp),
                     )
                 }
             }
@@ -380,57 +425,76 @@ private fun BrowseGrid(
         }
         item(span = { GridItemSpan(maxLineSpan) }, key = "browse-header") {
             Text(
-                "Jelajahi semua",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                modifier = if (history.isNotEmpty()) Modifier.padding(top = 12.dp) else Modifier
+                "Jelajahi suasana & genre",
+                style = MaterialTheme.typography.titleLarge,
+                color = WarmInk,
+                modifier = if (history.isNotEmpty()) Modifier.padding(top = 12.dp) else Modifier,
             )
         }
         items(browseCategories, key = { it.first }) { (name, color) ->
             Box(
-                Modifier
-                    .height(96.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(color)
+                modifier = Modifier
+                    .height(86.dp)
+                    .clip(tileShape)
+                    .background(
+                        Brush.linearGradient(
+                            listOf(
+                                color.copy(alpha = if (prefs.isGlass) 0.52f else 0.36f),
+                                color.copy(alpha = 0.18f),
+                                WarmSurface,
+                            )
+                        )
+                    )
+                    .border(
+                        1.dp,
+                        if (prefs.isGlass) Color.White.copy(alpha = 0.16f) else WarmHairline,
+                        tileShape,
+                    )
                     .clickable { onCategoryClick(name) }
-                    .padding(12.dp)
+                    .padding(14.dp),
+                contentAlignment = Alignment.BottomStart,
             ) {
-                Text(name, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color.White)
+                Text(
+                    text = name,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = WarmInk,
+                )
             }
         }
     }
 }
 
-/** Satu baris riwayat pencarian: ikon jam, kata kunci, tombol hapus. */
 @Composable
 private fun HistoryRow(query: String, onClick: () -> Unit, onRemove: () -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
+            .clip(RoundedCornerShape(10.dp))
             .clickable(onClick = onClick)
             .padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Icon(Icons.Default.History, null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+        Icon(Icons.Rounded.History, null, tint = WarmMuted, modifier = Modifier.size(20.dp))
         Spacer(Modifier.width(12.dp))
         Text(
             query,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f)
+            color = WarmInk,
+            modifier = Modifier.weight(1f),
         )
         IconButton(onClick = onRemove) {
-            Icon(Icons.Default.Close, "Hapus dari riwayat", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            Icon(Icons.Rounded.Close, "Hapus dari riwayat", tint = WarmFaint, modifier = Modifier.size(18.dp))
         }
     }
 }
 
-/** Daftar "Baru Diputar" ala Spotify. */
 @Composable
 private fun RecentList(
     items: List<YTItem>,
     likedIds: Set<String>,
+    bottomPadding: androidx.compose.ui.unit.Dp,
     onOpen: (YTItem) -> Unit,
     onRemove: (YTItem) -> Unit,
     onClearAll: () -> Unit,
@@ -439,22 +503,26 @@ private fun RecentList(
     if (items.isEmpty()) {
         Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("Putar apa yang kamu suka", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text("Putar apa yang kamu suka", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = WarmInk)
                 Text(
                     "Cari artis, lagu, album, dan playlist.",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 6.dp)
+                    color = WarmMuted,
+                    modifier = Modifier.padding(top = 6.dp),
                 )
             }
         }
         return
     }
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 16.dp)) {
+    LazyColumn(
+        Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(bottom = bottomPadding),
+    ) {
         item {
             Text(
                 "Baru Diputar",
                 style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 8.dp)
+                color = WarmInk,
+                modifier = Modifier.padding(start = 18.dp, top = 12.dp, bottom = 8.dp),
             )
         }
         items(items, key = { "recent-${it.id}" }) { item ->
@@ -463,51 +531,63 @@ private fun RecentList(
                     .fillMaxWidth()
                     .clickable { onOpen(item) }
                     .padding(start = 16.dp, end = 4.dp, top = 8.dp, bottom = 8.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 val isArtist = item is ArtistItem
                 Artwork(
                     item.thumbnail,
-                    Modifier.size(56.dp),
-                    shape = if (isArtist) CircleShape else RoundedCornerShape(4.dp),
-                    placeholder = if (isArtist) Icons.Default.Person else Icons.Default.MusicNote
+                    Modifier.size(54.dp),
+                    shape = if (isArtist) CircleShape else RoundedCornerShape(10.dp),
+                    placeholder = if (isArtist) Icons.Rounded.Person else Icons.Rounded.MusicNote,
                 )
                 Spacer(Modifier.width(14.dp))
                 Column(Modifier.weight(1f)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            item.title, maxLines = 1, overflow = TextOverflow.Ellipsis,
-                            style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium,
-                            modifier = Modifier.weight(1f, fill = false)
+                            item.title,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.SemiBold,
+                            color = WarmInk,
+                            modifier = Modifier.weight(1f, fill = false),
                         )
                         if (isArtist) {
                             Spacer(Modifier.width(6.dp))
-                            Icon(Icons.Default.Verified, null, Modifier.size(16.dp), tint = Color(0xFF7FD7A6))
+                            Icon(Icons.Rounded.Verified, null, Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
                         }
                     }
                     Text(
-                        recentSubtitle(item), maxLines = 1, overflow = TextOverflow.Ellipsis,
-                        style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant
+                        recentSubtitle(item),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = WarmMuted,
                     )
                 }
                 if (item is SongItem) {
                     val isLiked = item.id in likedIds
                     IconButton(onClick = { onToggleLike(item) }) {
                         Icon(
-                            if (isLiked) Icons.Default.CheckCircle else Icons.Default.AddCircleOutline,
-                            if (isLiked) "Hapus dari Koleksi" else "Simpan ke Koleksi",
-                            tint = if (isLiked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                            if (isLiked) Icons.Rounded.CheckCircle else Icons.Rounded.AddCircleOutline,
+                            if (isLiked) "Hapus dari Pustaka" else "Simpan ke Pustaka",
+                            tint = if (isLiked) MaterialTheme.colorScheme.primary else WarmMuted,
                         )
                     }
                 }
                 IconButton(onClick = { onRemove(item) }) {
-                    Icon(Icons.Default.Close, "Hapus dari riwayat", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Icon(Icons.Rounded.Close, "Hapus dari riwayat", tint = WarmFaint, modifier = Modifier.size(18.dp))
                 }
             }
         }
         item {
-            Box(Modifier.fillMaxWidth().padding(top = 16.dp), contentAlignment = Alignment.Center) {
-                OutlinedButton(onClick = onClearAll) { Text("Hapus riwayat") }
+            Box(Modifier.fillMaxWidth().padding(top = 14.dp), contentAlignment = Alignment.Center) {
+                OutlinedButton(
+                    onClick = onClearAll,
+                    border = BorderStroke(1.dp, WarmHairline),
+                ) {
+                    Text("Hapus riwayat", color = WarmInk)
+                }
             }
         }
     }

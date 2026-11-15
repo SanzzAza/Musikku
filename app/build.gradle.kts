@@ -83,6 +83,9 @@ dependencies {
     // Gambar
     implementation("io.coil-kt:coil-compose:2.7.0")
 
+    // Efek blur backdrop Liquid Glass (RenderEffect Android 12+, fallback ringan Android < 12)
+    implementation("dev.chrisbanes.haze:haze:1.1.1")
+
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
 
     // Audio full dari YouTube Music

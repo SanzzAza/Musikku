@@ -1,6 +1,8 @@
 package com.example.musikku.ui.playlist
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,11 +19,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.rounded.Delete
+import androidx.compose.material.icons.rounded.Edit
+import androidx.compose.material.icons.rounded.Favorite
+import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -39,6 +41,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
@@ -49,6 +52,11 @@ import com.example.musikku.data.ytmusic.SongItem
 import com.example.musikku.ui.artist.BackButton
 import com.example.musikku.ui.components.PlayShuffleButtons
 import com.example.musikku.ui.components.SongRow
+import com.example.musikku.ui.theme.LocalBottomOverlayPadding
+import com.example.musikku.ui.theme.LocalCoverPalette
+import com.example.musikku.ui.theme.WarmHairline
+import com.example.musikku.ui.theme.WarmInk
+import com.example.musikku.ui.theme.WarmMuted
 
 /** id khusus untuk halaman "Lagu yang Disukai". */
 const val LIKED_PLAYLIST_ID = "liked"
@@ -66,11 +74,14 @@ fun PlaylistScreen(
     val liked by AppModule.favorites.items.collectAsStateWithLifecycle()
     val playlists by AppModule.playlists.items.collectAsStateWithLifecycle()
     val playlist = playlists.firstOrNull { it.id == playlistId }
+    val palette = LocalCoverPalette.current
+    val bottomPadding = LocalBottomOverlayPadding.current
 
     if (!isLiked && playlist == null) {
-        // Playlist sudah dihapus
-        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("Playlist tidak ditemukan") }
-        BackButton(onBack, Modifier.statusBarsPadding().padding(8.dp))
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Text("Playlist tidak ditemukan", color = WarmInk)
+        }
+        BackButton(onBack, Modifier.statusBarsPadding().padding(10.dp))
         return
     }
 
@@ -83,60 +94,79 @@ fun PlaylistScreen(
     var confirmDelete by remember { mutableStateOf(false) }
 
     Box(Modifier.fillMaxSize()) {
-        LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = 24.dp)) {
+        LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(bottom = bottomPadding + 20.dp)) {
             item {
                 Column(
                     Modifier
                         .fillMaxWidth()
                         .background(
                             Brush.verticalGradient(
-                                listOf(if (isLiked) Color(0xFF4A2FBD) else Color(0xFF3F3F46), MaterialTheme.colorScheme.background)
+                                listOf(
+                                    palette.ambient.copy(alpha = if (isLiked) 0.90f else 0.55f),
+                                    MaterialTheme.colorScheme.background,
+                                )
                             )
                         )
                         .statusBarsPadding()
-                        .padding(top = 56.dp, bottom = 12.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                        .padding(top = 56.dp, bottom = 16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    if (isLiked) {
-                        Box(
-                            Modifier
-                                .size(210.dp)
-                                .clip(RoundedCornerShape(6.dp))
-                                .background(Brush.linearGradient(listOf(Color(0xFF450AF5), Color(0xFFC4EFD9)))),
-                            contentAlignment = Alignment.Center
-                        ) { Icon(Icons.Default.Favorite, null, Modifier.size(80.dp), tint = Color.White) }
-                    } else {
-                        PlaylistCover(playlist!!, 210.dp)
+                    Box(
+                        modifier = Modifier
+                            .shadow(18.dp, RoundedCornerShape(22.dp))
+                            .clip(RoundedCornerShape(22.dp))
+                            .border(1.dp, WarmHairline, RoundedCornerShape(22.dp))
+                            .padding(6.dp),
+                    ) {
+                        if (isLiked) {
+                            Box(
+                                Modifier
+                                    .size(204.dp)
+                                    .clip(RoundedCornerShape(16.dp))
+                                    .background(Brush.linearGradient(listOf(palette.accent, palette.secondaryAccent))),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Icon(Icons.Rounded.Favorite, null, Modifier.size(76.dp), tint = Color.White)
+                            }
+                        } else {
+                            PlaylistCover(playlist!!, 204.dp)
+                        }
                     }
                 }
             }
             item {
-                Row(Modifier.padding(start = 16.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                Row(Modifier.padding(start = 18.dp, end = 6.dp), verticalAlignment = Alignment.CenterVertically) {
                     Column(Modifier.weight(1f)) {
-                        Text(title, style = MaterialTheme.typography.headlineMedium)
+                        Text(title, style = MaterialTheme.typography.headlineMedium, color = WarmInk)
                         Spacer(Modifier.height(4.dp))
                         Text(
                             buildString {
                                 append("${songs.size} lagu")
                                 if (totalSec > 0) append(" • ${formatTotal(totalSec)}")
                             },
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            style = MaterialTheme.typography.bodyMedium
+                            color = WarmMuted,
+                            style = MaterialTheme.typography.bodyMedium,
                         )
                     }
                     if (!isLiked) {
                         Box {
-                            IconButton(onClick = { menuOpen = true }) { Icon(Icons.Default.MoreVert, "Opsi playlist") }
-                            DropdownMenu(expanded = menuOpen, onDismissRequest = { menuOpen = false }) {
+                            IconButton(onClick = { menuOpen = true }) {
+                                Icon(Icons.Rounded.MoreVert, "Opsi playlist", tint = WarmInk)
+                            }
+                            DropdownMenu(
+                                expanded = menuOpen,
+                                onDismissRequest = { menuOpen = false },
+                                containerColor = Color(0xFF211D1A),
+                            ) {
                                 DropdownMenuItem(
-                                    text = { Text("Ganti nama") },
-                                    leadingIcon = { Icon(Icons.Default.Edit, null) },
-                                    onClick = { menuOpen = false; renaming = true }
+                                    text = { Text("Ganti nama", color = WarmInk) },
+                                    leadingIcon = { Icon(Icons.Rounded.Edit, null, tint = WarmInk) },
+                                    onClick = { menuOpen = false; renaming = true },
                                 )
                                 DropdownMenuItem(
-                                    text = { Text("Hapus playlist") },
-                                    leadingIcon = { Icon(Icons.Default.Delete, null) },
-                                    onClick = { menuOpen = false; confirmDelete = true }
+                                    text = { Text("Hapus playlist", color = WarmInk) },
+                                    leadingIcon = { Icon(Icons.Rounded.Delete, null, tint = WarmInk) },
+                                    onClick = { menuOpen = false; confirmDelete = true },
                                 )
                             }
                         }
@@ -148,7 +178,7 @@ fun PlaylistScreen(
                     PlayShuffleButtons(
                         onPlay = { onPlaySongs(songs, 0) },
                         onShuffle = { onShuffle(songs) },
-                        modifier = Modifier.padding(vertical = 8.dp)
+                        modifier = Modifier.padding(vertical = 10.dp),
                     )
                 }
                 itemsIndexed(songs, key = { _, s -> s.id }) { i, song ->
@@ -165,25 +195,25 @@ fun PlaylistScreen(
                     Column(
                         Modifier.fillMaxWidth().padding(32.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
-                        Text("Ayo isi playlist ini", style = MaterialTheme.typography.titleMedium)
+                        Text("Ayo isi playlist ini", style = MaterialTheme.typography.titleMedium, color = WarmInk)
                         Text(
-                            if (isLiked) "Ketuk ⊕ atau ikon hati untuk menyimpan lagu ke sini."
+                            if (isLiked) "Ketuk ikon hati di pemutar atau mini player untuk menyimpan lagu ke sini."
                             else "Ketuk ⋮ di lagu mana pun, lalu pilih \"Tambahkan ke playlist\".",
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center
+                            color = WarmMuted,
+                            textAlign = TextAlign.Center,
                         )
-                        OutlinedButton(onClick = onFindSongs) {
-                            Icon(Icons.Default.Search, null, Modifier.size(18.dp))
+                        OutlinedButton(onClick = onFindSongs, border = BorderStroke(1.dp, WarmHairline)) {
+                            Icon(Icons.Rounded.Search, null, Modifier.size(18.dp), tint = WarmInk)
                             Spacer(Modifier.size(8.dp))
-                            Text("Cari lagu")
+                            Text("Cari lagu", color = WarmInk)
                         }
                     }
                 }
             }
         }
-        BackButton(onBack, Modifier.statusBarsPadding().padding(8.dp))
+        BackButton(onBack, Modifier.statusBarsPadding().padding(10.dp))
     }
 
     if (renaming && playlist != null) {
@@ -192,22 +222,27 @@ fun PlaylistScreen(
             initial = playlist.name,
             confirmText = "Simpan",
             onDismiss = { renaming = false },
-            onConfirm = { AppModule.playlists.rename(playlistId, it); renaming = false }
+            onConfirm = { AppModule.playlists.rename(playlistId, it); renaming = false },
         )
     }
     if (confirmDelete && playlist != null) {
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
-            title = { Text("Hapus playlist?") },
-            text = { Text("\"${playlist.name}\" akan dihapus dari Koleksi.") },
+            containerColor = Color(0xFF1B1816),
+            title = { Text("Hapus playlist?", color = WarmInk) },
+            text = { Text("\"${playlist.name}\" akan dihapus dari Pustaka.", color = WarmMuted) },
             confirmButton = {
-                TextButton(onClick = {
-                    confirmDelete = false
-                    onBack()
-                    AppModule.playlists.delete(playlistId)
-                }) { Text("Hapus") }
+                TextButton(
+                    onClick = {
+                        confirmDelete = false
+                        onBack()
+                        AppModule.playlists.delete(playlistId)
+                    }
+                ) { Text("Hapus", color = MaterialTheme.colorScheme.primary) }
             },
-            dismissButton = { TextButton(onClick = { confirmDelete = false }) { Text("Batal") } },
+            dismissButton = {
+                TextButton(onClick = { confirmDelete = false }) { Text("Batal", color = WarmMuted) }
+            },
         )
     }
 }
