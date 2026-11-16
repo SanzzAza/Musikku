@@ -39,3 +39,13 @@ Uji perangkat: ekspor, hapus/tambah data dan impor; uji file rusak dan terlalu b
 - **Beranda baru**: chip filter suasana (Bersantai, Senang, Pesta, Perjalanan, Fokus, Galau), grid **Panggilan cepat** 3×3 dengan kartu dadu acak cepat & indikator halaman, serta **Pilihan cepat** dengan tombol Putar semua dan sheet Riwayat putar.
 - **Pemutar & Lirik Editorial**: header "SEDANG DIPUTAR" dengan judul miring, bingkai ganda sampul album, tombol Play/Pause squircle terakota, seek bar modern, dock 4 aksi bawah (**LIRIK • ANTREAN • BAGIKAN • WAKTU TIDUR**), lirik tersinkron bergaya serif rata tengah, serta **Kartu Bagikan Lagu** (ekspor gambar PNG siap Story atau bagikan teks).
 - **Gaya huruf & saklar iOS**: 4 pilihan gaya huruf (Modern, Editorial, Klasik Serif, Studio) dan saklar kaca pegas di Pengaturan Tampilan.
+
+## Studio Poster & Kartu Foto Liquid Glass
+- **Akses global**: buka **Studio Poster & Kartu** dari tombol **POSTER** di layar Pemutar/Lirik, atau dari menu titik tiga (`⋮`) di lagu mana pun (Beranda, Cari, Pustaka, Album, Playlist, Artis).
+- **Mode Kartu Foto Liquid Glass (ala Auralys)**:
+  - **Pilih foto sendiri dari Galeri** sebagai latar kanvas, atau pilih latar bawaan / **Transparan (Stiker PNG)** untuk ditempel ke Story & TikTok.
+  - **Kartu Pemutar Kaca Frosted** lengkap dengan sampul album, label `~ Musikku`, judul + ikon hati, artis, seekbar + waktu berjalan/sisa, tombol kontrol (`⏮ ⏸ ⏭`), slider volume, refraksi blur backdrop asli, dan kilau sudut bintang (`✦`).
+  - **Kolase 1, 3, atau 5 Kartu Melayang**: geser kartu langsung dengan jari, atur kemiringan & ukuran, atau ganti lagu tiap kartu dari Favorit, Riwayat, dan Pencarian YouTube Music.
+  - **Efek Kedalaman "Subjek di Depan" (AI Subject Segmentation)**: otomatis memisahkan orang/subjek di foto sehingga kartu pemutar kaca tampak melayang di belakang subjek!
+- **Mode Poster Lagu & Poster Lirik**: sampul berbingkai + strip 5 palet warna, pilih hingga 4 baris lirik, 4 gaya latar (Liquid Glass, Editorial, Obsidian, Cover Blur), 3 rasio resolusi tinggi (9:16, 4:5, 1:1), dan kustomisasi font/ketebalan/rata/warna teks.
+- **Ekspor**: langsung **Simpan ke Galeri** (`Pictures/Musikku`), **Bagikan PNG** ke Instagram Story/TikTok/WhatsApp, atau bagikan teks.

@@ -66,6 +66,7 @@ import com.example.musikku.ui.player.rememberCoverPalette
 import com.example.musikku.ui.playlist.AddToPlaylistHost
 import com.example.musikku.ui.playlist.PlaylistPicker
 import com.example.musikku.ui.playlist.PlaylistScreen
+import com.example.musikku.ui.poster.SongPosterHost
 import com.example.musikku.ui.search.SearchScreen
 import com.example.musikku.ui.settings.AppearanceSheet
 import com.example.musikku.ui.theme.AmbientBackdrop
@@ -345,6 +346,7 @@ fun MusikkuApp(playerVm: PlayerViewModel = viewModel()) {
                 )
             }
             AddToPlaylistHost()
+            SongPosterHost()
         }
     }
 }

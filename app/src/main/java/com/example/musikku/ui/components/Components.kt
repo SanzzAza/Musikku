@@ -24,6 +24,7 @@ import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.material.icons.filled.AddCircleOutline
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.GraphicEq
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Person
@@ -66,6 +67,7 @@ import com.example.musikku.data.ytmusic.ArtistItem
 import com.example.musikku.data.ytmusic.SongItem
 import com.example.musikku.data.ytmusic.YTItem
 import com.example.musikku.ui.playlist.PlaylistPicker
+import com.example.musikku.ui.poster.SongPosterPicker
 import com.example.musikku.ui.theme.LocalCoverPalette
 import com.example.musikku.ui.theme.LocalUiPrefs
 import com.example.musikku.ui.theme.WarmHairline
@@ -193,6 +195,11 @@ fun SongMenu(
                 onClick = { onDismiss(); queueActions.enqueue(song, false) },
             )
         }
+        DropdownMenuItem(
+            text = { Text("Buat Poster Lagu", color = WarmInk) },
+            leadingIcon = { Icon(Icons.Default.Image, null, tint = WarmInk) },
+            onClick = { onDismiss(); SongPosterPicker.open(song) },
+        )
         DropdownMenuItem(
             text = { Text("Tambahkan ke playlist", color = WarmInk) },
             leadingIcon = { Icon(Icons.AutoMirrored.Filled.PlaylistAdd, null, tint = WarmInk) },

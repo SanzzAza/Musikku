@@ -92,6 +92,8 @@ import com.example.musikku.player.NowPlaying
 import com.example.musikku.ui.components.Artwork
 import com.example.musikku.ui.components.formatMs
 import com.example.musikku.ui.lyrics.EditorialLyricsStage
+import com.example.musikku.ui.poster.PosterMode
+import com.example.musikku.ui.poster.SongPosterPicker
 import com.example.musikku.ui.theme.EditorialBackground
 import com.example.musikku.ui.theme.GlassCircleIconButton
 import com.example.musikku.ui.theme.LocalCoverPalette
@@ -135,7 +137,6 @@ fun PlayerScreen(
     var showLyrics by rememberSaveable { mutableStateOf(false) }
     var showTimer by rememberSaveable { mutableStateOf(false) }
     var showQueue by rememberSaveable { mutableStateOf(false) }
-    var showShareCard by rememberSaveable { mutableStateOf(false) }
     var menuOpen by remember { mutableStateOf(false) }
 
     BackHandler(enabled = showLyrics) { showLyrics = false }
@@ -146,8 +147,16 @@ fun PlayerScreen(
     if (showQueue) {
         QueueSheet(state, onPlayQueueItem, onRemoveQueueItem, onMoveQueueItem) { showQueue = false }
     }
-    if (showShareCard && song != null) {
-        ShareSongCardSheet(song, lyrics, state.positionMs) { showShareCard = false }
+
+    val openPoster: (PosterMode) -> Unit = { mode ->
+        song?.let {
+            SongPosterPicker.open(
+                song = it,
+                lyricsState = lyrics,
+                positionMs = state.positionMs,
+                initialMode = mode,
+            )
+        }
     }
 
     val cover = song?.thumbnail
@@ -331,7 +340,7 @@ fun PlayerScreen(
                                     onOpenArtist = {
                                         song?.artists?.firstOrNull { it.id != null }?.id?.let(onArtistClick)
                                     },
-                                    onShare = { showShareCard = true },
+                                    onShare = { openPoster(PosterMode.PHOTO_CARDS) },
                                 )
                             }
                         }
@@ -401,7 +410,7 @@ fun PlayerScreen(
                                     onOpenArtist = {
                                         song?.artists?.firstOrNull { it.id != null }?.id?.let(onArtistClick)
                                     },
-                                    onShare = { showShareCard = true },
+                                    onShare = { openPoster(PosterMode.LYRIC_POSTER) },
                                 )
                             }
                         }
@@ -635,9 +644,11 @@ fun PlayerScreen(
                 )
                 PlayerDockAction(
                     icon = Icons.Outlined.Share,
-                    label = "BAGIKAN",
-                    active = showShareCard,
-                    onClick = { if (song != null) showShareCard = true },
+                    label = "POSTER",
+                    active = false,
+                    onClick = {
+                        openPoster(if (showLyrics) PosterMode.LYRIC_POSTER else PosterMode.PHOTO_CARDS)
+                    },
                     modifier = Modifier.weight(1f),
                 )
                 val timerActive = sleepRemainingMs != null
@@ -722,7 +733,7 @@ private fun PlayerOverflowMenu(
             )
         }
         DropdownMenuItem(
-            text = { Text("Kartu bagikan lagu", color = WarmInk) },
+            text = { Text("Buat Poster Lagu", color = WarmInk) },
             leadingIcon = { Icon(Icons.Outlined.Share, null, tint = WarmInk) },
             onClick = { onDismiss(); onShare() },
         )

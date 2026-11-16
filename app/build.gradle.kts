@@ -86,6 +86,9 @@ dependencies {
     // Efek blur backdrop Liquid Glass (RenderEffect Android 12+, fallback ringan Android < 12)
     implementation("dev.chrisbanes.haze:haze:1.1.1")
 
+    // Segmentasi subjek on-device untuk efek kedalaman "Kartu di Belakang Subjek" pada Poster Foto
+    implementation("com.google.android.gms:play-services-mlkit-subject-segmentation:16.0.0-beta1")
+
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
 
     // Audio full dari YouTube Music
