@@ -25,6 +25,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.DataSaverOn
+import androidx.compose.material.icons.rounded.FastForward
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.ViewAgenda
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -49,6 +51,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.musikku.AppModule
 import com.example.musikku.data.local.AppFontStyle
+import com.example.musikku.data.ytmusic.AudioQuality
 import com.example.musikku.data.local.UiPreferences
 import com.example.musikku.data.local.UiStyle
 import com.example.musikku.ui.theme.EditorialBackground
@@ -180,6 +183,93 @@ fun AppearanceSheet(
             }
 
             Spacer(Modifier.height(22.dp))
+            SectionEyebrow("PEMUTARAN")
+            Spacer(Modifier.height(10.dp))
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(WarmSurface)
+                    .border(1.dp, WarmHairline, RoundedCornerShape(20.dp))
+            ) {
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 14.dp)
+                ) {
+                    Text(
+                        text = "Kualitas audio",
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.SemiBold,
+                        color = WarmInk,
+                    )
+                    Text(
+                        text = "Bitrate stream yang diambil dari YouTube Music",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = WarmMuted,
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        AudioQuality.entries.forEach { quality ->
+                            val selected = prefs.audioQuality == quality
+                            Column(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .clip(RoundedCornerShape(14.dp))
+                                    .background(
+                                        if (selected) accent.copy(alpha = 0.20f) else WarmSurfaceElevated
+                                    )
+                                    .border(
+                                        width = if (selected) 1.5.dp else 1.dp,
+                                        color = if (selected) accent else WarmHairline,
+                                        shape = RoundedCornerShape(14.dp),
+                                    )
+                                    .clickable { AppModule.uiPrefs.setAudioQuality(quality) }
+                                    .padding(horizontal = 10.dp, vertical = 10.dp),
+                            ) {
+                                Text(
+                                    text = quality.label,
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = if (selected) accent else WarmInk,
+                                )
+                                Spacer(Modifier.height(2.dp))
+                                Text(
+                                    text = quality.hint,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = WarmMuted,
+                                    lineHeight = 15.sp,
+                                )
+                            }
+                        }
+                    }
+                }
+
+                SectionDivider()
+
+                SettingToggleRow(
+                    icon = Icons.Rounded.DataSaverOn,
+                    title = "Hemat data di seluler",
+                    subtitle = "Pakai kualitas terendah saat memakai data seluler; Wi-Fi tetap memakai pilihan di atas",
+                    checked = prefs.dataSaverOnMobile,
+                    onCheckedChange = { AppModule.uiPrefs.setDataSaverOnMobile(it) },
+                )
+
+                SectionDivider()
+
+                SettingToggleRow(
+                    icon = Icons.Rounded.FastForward,
+                    title = "Lewati bagian hening",
+                    subtitle = "Melompati bagian tanpa suara di awal dan akhir lagu",
+                    checked = prefs.skipSilence,
+                    onCheckedChange = { AppModule.uiPrefs.setSkipSilence(it) },
+                )
+            }
+
+            Spacer(Modifier.height(22.dp))
             SectionEyebrow("GAYA HURUF")
             Spacer(Modifier.height(10.dp))
 
@@ -227,6 +317,17 @@ fun AppearanceSheet(
             }
         }
     }
+}
+
+@Composable
+private fun SectionDivider() {
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .height(1.dp)
+            .background(WarmHairline)
+    )
 }
 
 @Composable

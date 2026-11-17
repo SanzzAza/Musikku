@@ -1,6 +1,7 @@
 package com.example.musikku.data.local
 
 import android.content.Context
+import com.example.musikku.data.ytmusic.AudioQuality
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,6 +23,9 @@ data class UiPreferences(
     val dynamicCoverTheme: Boolean = true,
     val collapseNavbarOnScroll: Boolean = true,
     val fontStyle: AppFontStyle = AppFontStyle.MODERN,
+    val audioQuality: AudioQuality = AudioQuality.HIGH,
+    val dataSaverOnMobile: Boolean = false,
+    val skipSilence: Boolean = false,
 ) {
     val isGlass: Boolean get() = style == UiStyle.LIQUID_GLASS
 }
@@ -41,11 +45,17 @@ class UiPreferencesStore(context: Context) {
         val font = prefs.getString(KEY_FONT, null)
             ?.let { runCatching { AppFontStyle.valueOf(it) }.getOrNull() }
             ?: AppFontStyle.MODERN
+        val quality = prefs.getString(KEY_QUALITY, null)
+            ?.let { runCatching { AudioQuality.valueOf(it) }.getOrNull() }
+            ?: AudioQuality.HIGH
         return UiPreferences(
             style = style,
             dynamicCoverTheme = prefs.getBoolean(KEY_DYNAMIC_COVER, true),
             collapseNavbarOnScroll = prefs.getBoolean(KEY_COLLAPSE_NAV, true),
             fontStyle = font,
+            audioQuality = quality,
+            dataSaverOnMobile = prefs.getBoolean(KEY_DATA_SAVER, false),
+            skipSilence = prefs.getBoolean(KEY_SKIP_SILENCE, false),
         )
     }
 
@@ -57,6 +67,12 @@ class UiPreferencesStore(context: Context) {
 
     fun setFontStyle(font: AppFontStyle) = update { it.copy(fontStyle = font) }
 
+    fun setAudioQuality(quality: AudioQuality) = update { it.copy(audioQuality = quality) }
+
+    fun setDataSaverOnMobile(enabled: Boolean) = update { it.copy(dataSaverOnMobile = enabled) }
+
+    fun setSkipSilence(enabled: Boolean) = update { it.copy(skipSilence = enabled) }
+
     private fun update(transform: (UiPreferences) -> UiPreferences) {
         val next = transform(_state.value)
         _state.value = next
@@ -65,6 +81,9 @@ class UiPreferencesStore(context: Context) {
             .putBoolean(KEY_DYNAMIC_COVER, next.dynamicCoverTheme)
             .putBoolean(KEY_COLLAPSE_NAV, next.collapseNavbarOnScroll)
             .putString(KEY_FONT, next.fontStyle.name)
+            .putString(KEY_QUALITY, next.audioQuality.name)
+            .putBoolean(KEY_DATA_SAVER, next.dataSaverOnMobile)
+            .putBoolean(KEY_SKIP_SILENCE, next.skipSilence)
             .apply()
     }
 
@@ -73,5 +92,8 @@ class UiPreferencesStore(context: Context) {
         const val KEY_DYNAMIC_COVER = "dynamic_cover_theme"
         const val KEY_COLLAPSE_NAV = "collapse_navbar_on_scroll"
         const val KEY_FONT = "font_style"
+        const val KEY_QUALITY = "audio_quality"
+        const val KEY_DATA_SAVER = "data_saver_mobile"
+        const val KEY_SKIP_SILENCE = "skip_silence"
     }
 }

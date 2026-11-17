@@ -1,5 +1,32 @@
 # Catatan update Musikku
 
+## Fase 2 — Fitur pemutaran & lirik
+
+### Kualitas audio (baru)
+- Tiga pilihan di Pengaturan → **Pemutaran**: **Tinggi** (bitrate tertinggi yang tersedia), **Otomatis** (sekitar 160 kbps, seimbang), **Hemat** (bitrate terendah).
+- Pilihan ini benar-benar dipakai saat resolusi stream: `StreamResolver.audioUrl()` sekarang menerima kualitas dan cache-nya dipisah per kualitas (URL 256 kbps tidak dipakai ulang di mode hemat).
+- **Hemat data di seluler**: kalau aktif dan perangkat memakai jaringan berbayar (bukan Wi-Fi), kualitas otomatis turun ke Hemat. Wi-Fi tetap memakai pilihan pengguna. Butuh izin baru `ACCESS_NETWORK_STATE`.
+- Penyebab: sebelumnya kualitas tidak bisa dipilih sama sekali — aplikasi selalu mengambil bitrate tertinggi.
+
+### Geser timing lirik (baru)
+- Di layar lirik sekarang ada kontrol **− / +** (langkah 0,25 detik, maksimal ±5 detik) plus tombol **Reset**. Muncul hanya ketika liriknya tersinkron.
+- Geseran disimpan **per lagu** (`LyricsOffsetStore`), jadi tidak mengubah lagu lain.
+- Ketuk-baris untuk seek ikut dikoreksi dengan geseran yang sama, jadi seek tetap jatuh di baris yang benar.
+- Aturan batas dan langkah ada di `LyricsOffset` (fungsi murni, ada unit test).
+
+### Lewati bagian hening (baru)
+- Sakelar di Pengaturan → Pemutaran; memakai `ExoPlayer.skipSilenceEnabled`.
+- Perubahan berlaku langsung tanpa menutup aplikasi, karena `PlaybackService` sekarang mengamati preferensi.
+
+### Test
+- `LyricsOffsetTest` (5 test) + `AudioStreamSelectorTest` (8 test) dijalankan otomatis di CI.
+
+### Checklist uji manual Fase 2
+1. Pengaturan → Pemutaran: ganti kualitas ke Hemat, putar lagu baru, pastikan tetap berbunyi.
+2. Aktifkan "Hemat data di seluler", matikan Wi-Fi, putar lagu baru — kualitas harus turun; nyalakan Wi-Fi, putar lagu lain — kualitas kembali.
+3. Buka lirik lagu yang tersinkron, tekan + beberapa kali; sorotan lirik harus bergeser. Pindah lagu lalu kembali — geseran harus tetap tersimpan. Tekan Reset.
+4. Nyalakan "Lewati bagian hening", putar lagu dengan intro hening panjang.
+
 ## Fase 1 — Fondasi (build, mesin stream, ikon)
 
 ### Platform & build

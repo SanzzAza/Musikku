@@ -79,6 +79,8 @@ fun EditorialLyricsStage(
     onSeek: (Long) -> Unit,
     onRetry: () -> Unit,
     fadeColor: Color,
+    /** Geseran waktu lirik (ms). Positif = lirik tampil lebih lambat. */
+    offsetMs: Long = 0L,
     modifier: Modifier = Modifier,
 ) {
     Box(modifier = modifier.fillMaxWidth()) {
@@ -121,8 +123,10 @@ fun EditorialLyricsStage(
             is LyricsUiState.Loaded -> when (val lyrics = state.lyrics) {
                 is Lyrics.Synced -> SyncedEditorialLyricsList(
                     lines = lyrics.lines,
-                    positionMs = positionMs,
-                    onSeek = onSeek,
+                    // Offset diterapkan di sini: positif menunda sorotan lirik,
+                    // dan ketuk-baris ikut dikoreksi supaya seek tetap akurat.
+                    positionMs = positionMs - offsetMs,
+                    onSeek = { lineTimeMs -> onSeek(lineTimeMs + offsetMs) },
                     modifier = Modifier.fillMaxSize(),
                 )
                 is Lyrics.Plain -> Column(

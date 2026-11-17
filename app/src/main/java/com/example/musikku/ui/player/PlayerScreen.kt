@@ -91,6 +91,9 @@ import com.example.musikku.player.LyricsUiState
 import com.example.musikku.player.NowPlaying
 import com.example.musikku.ui.components.Artwork
 import com.example.musikku.ui.components.formatMs
+import com.example.musikku.AppModule
+import com.example.musikku.data.local.LyricsOffset
+import com.example.musikku.data.lyrics.Lyrics
 import com.example.musikku.ui.lyrics.EditorialLyricsStage
 import com.example.musikku.ui.poster.PosterMode
 import com.example.musikku.ui.poster.SongPosterPicker
@@ -138,6 +141,11 @@ fun PlayerScreen(
     var showTimer by rememberSaveable { mutableStateOf(false) }
     var showQueue by rememberSaveable { mutableStateOf(false) }
     var menuOpen by remember { mutableStateOf(false) }
+
+    // Geseran lirik disimpan per lagu, jadi pindah lagu memuat nilai masing-masing.
+    var lyricOffset by remember(song?.id) {
+        mutableStateOf(song?.id?.let { AppModule.lyricsOffset.offsetFor(it) } ?: 0L)
+    }
 
     BackHandler(enabled = showLyrics) { showLyrics = false }
 
@@ -354,8 +362,20 @@ fun PlayerScreen(
                             onSeek = onSeek,
                             onRetry = onRetryLyrics,
                             fadeColor = baseBg,
+                            offsetMs = lyricOffset,
                             modifier = Modifier.weight(1f),
                         )
+
+                        if ((lyrics as? LyricsUiState.Loaded)?.lyrics is Lyrics.Synced) {
+                            LyricTimingRow(
+                                offsetMs = lyricOffset,
+                                accent = accent,
+                                onOffsetChange = { next ->
+                                    lyricOffset = next
+                                    song?.id?.let { AppModule.lyricsOffset.setOffset(it, next) }
+                                },
+                            )
+                        }
 
                         Spacer(Modifier.height(6.dp))
                         val eyebrow = song?.album?.name?.takeIf { it.isNotBlank() }
@@ -736,6 +756,79 @@ private fun PlayerOverflowMenu(
             text = { Text("Buat Poster Lagu", color = WarmInk) },
             leadingIcon = { Icon(Icons.Outlined.Share, null, tint = WarmInk) },
             onClick = { onDismiss(); onShare() },
+        )
+    }
+}
+
+/**
+ * Kontrol geser timing lirik: muncul hanya saat lirik tersinkron.
+ * Dipakai untuk membetulkan lirik yang muncul terlalu cepat atau terlambat.
+ */
+@Composable
+private fun LyricTimingRow(
+    offsetMs: Long,
+    accent: Color,
+    onOffsetChange: (Long) -> Unit,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 2.dp),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        TimingStepButton(
+            label = "\u2212",
+            accent = accent,
+            enabled = offsetMs > LyricsOffset.MIN_MS,
+            onClick = { onOffsetChange(LyricsOffset.step(offsetMs, -LyricsOffset.STEP_MS)) },
+        )
+        Text(
+            text = LyricsOffset.format(offsetMs),
+            style = MaterialTheme.typography.labelLarge,
+            color = if (offsetMs == 0L) WarmMuted else accent,
+            modifier = Modifier.padding(horizontal = 14.dp),
+        )
+        TimingStepButton(
+            label = "+",
+            accent = accent,
+            enabled = offsetMs < LyricsOffset.MAX_MS,
+            onClick = { onOffsetChange(LyricsOffset.step(offsetMs, LyricsOffset.STEP_MS)) },
+        )
+        if (offsetMs != 0L) {
+            Spacer(Modifier.width(10.dp))
+            Text(
+                text = "Reset",
+                style = MaterialTheme.typography.labelMedium,
+                color = WarmFaint,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .clickable { onOffsetChange(0L) }
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun TimingStepButton(
+    label: String,
+    accent: Color,
+    enabled: Boolean,
+    onClick: () -> Unit,
+) {
+    Box(
+        modifier = Modifier
+            .size(28.dp)
+            .clip(CircleShape)
+            .background(Color.White.copy(alpha = if (enabled) 0.10f else 0.04f))
+            .clickable(enabled = enabled, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.titleMedium,
+            color = if (enabled) accent else WarmFaint.copy(alpha = 0.5f),
         )
     }
 }

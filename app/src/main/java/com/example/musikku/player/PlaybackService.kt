@@ -2,6 +2,8 @@ package com.example.musikku.player
 
 import android.app.PendingIntent
 import android.content.Intent
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
@@ -18,9 +20,16 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
+import com.example.musikku.AppModule
 import com.example.musikku.MainActivity
+import com.example.musikku.data.ytmusic.AudioQuality
 import com.example.musikku.data.ytmusic.StreamResolver
 import com.example.musikku.data.ytmusic.YTMusic
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import java.util.concurrent.Executors
 
 /**
@@ -40,6 +49,8 @@ class PlaybackService : MediaSessionService() {
         }
     }
     private val prefetchExecutor = Executors.newSingleThreadExecutor()
+    private val serviceScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+    private lateinit var exoPlayer: ExoPlayer
 
     override fun onCreate() {
         super.onCreate()
@@ -65,6 +76,10 @@ class PlaybackService : MediaSessionService() {
             )
             .setHandleAudioBecomingNoisy(true) // pause saat headset dicabut
             .build()
+
+        exoPlayer = player
+        // Lewati bagian hening sesuai preferensi tersimpan
+        player.skipSilenceEnabled = AppModule.uiPrefs.state.value.skipSilence
 
         snapshot = PlaybackSnapshot(this)
         snapshot.restore(player)
@@ -97,13 +112,39 @@ class PlaybackService : MediaSessionService() {
             .setSessionActivity(openAppIntent)
             .build()
         snapshotHandler.postDelayed(saveTick, 5_000L)
+
+        // Preferensi pemutaran bisa berubah saat service hidup — terapkan langsung.
+        serviceScope.launch {
+            AppModule.uiPrefs.state.collect { prefs ->
+                exoPlayer.skipSilenceEnabled = prefs.skipSilence
+            }
+        }
     }
 
     private fun resolve(dataSpec: DataSpec): DataSpec {
         val uri = dataSpec.uri
         if (uri.scheme != PlayerUris.SCHEME) return dataSpec
         val videoId = uri.lastPathSegment ?: return dataSpec
-        return dataSpec.withUri(Uri.parse(StreamResolver.audioUrl(videoId)))
+        return dataSpec.withUri(Uri.parse(StreamResolver.audioUrl(videoId, effectiveQuality())))
+    }
+
+    /**
+     * Kualitas yang benar-benar dipakai: kalau "hemat data di seluler" aktif dan
+     * perangkat sedang memakai jaringan berbayar, turunkan ke LOW. Wi-Fi tetap
+     * memakai pilihan pengguna.
+     */
+    private fun effectiveQuality(): AudioQuality {
+        val prefs = AppModule.uiPrefs.state.value
+        if (!prefs.dataSaverOnMobile) return prefs.audioQuality
+        return try {
+            val cm = getSystemService(ConnectivityManager::class.java)
+            val caps = cm?.let { it.getNetworkCapabilities(it.activeNetwork) }
+            val metered = caps != null &&
+                !caps.hasCapability(NetworkCapabilities.NET_CAPABILITY_NOT_METERED)
+            if (metered) AudioQuality.LOW else prefs.audioQuality
+        } catch (_: Exception) {
+            prefs.audioQuality
+        }
     }
 
     private fun prefetch(item: MediaItem) {
@@ -129,6 +170,7 @@ class PlaybackService : MediaSessionService() {
             release()
         }
         mediaSession = null
+        serviceScope.cancel()
         prefetchExecutor.shutdownNow()
         super.onDestroy()
     }

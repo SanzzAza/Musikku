@@ -52,12 +52,16 @@ object StreamResolver {
 
     /** Buang URL lama agar percobaan ulang mengambil URL stream baru. */
     fun invalidate(videoId: String) {
-        cache.remove(videoId)
+        cache.keys.filter { it.startsWith("$videoId|") }.forEach { cache.remove(it) }
     }
 
+    /** Cache dipisah per kualitas: URL 256 kbps tidak boleh dipakai saat mode hemat. */
+    private fun cacheKey(videoId: String, quality: AudioQuality) = "$videoId|${quality.name}"
+
     @Throws(IOException::class)
-    fun audioUrl(videoId: String): String {
-        cache[videoId]?.let { (url, at) ->
+    fun audioUrl(videoId: String, quality: AudioQuality = AudioQuality.HIGH): String {
+        val key = cacheKey(videoId, quality)
+        cache[key]?.let { (url, at) ->
             if (System.currentTimeMillis() - at < TTL_MS) return url
         }
         ensureInit()
@@ -65,17 +69,17 @@ object StreamResolver {
         var lastError: IOException? = null
         for (attempt in 1..MAX_ATTEMPTS) {
             try {
-                val url = resolveOnce(videoId)
+                val url = resolveOnce(videoId, quality)
                 if (cache.size >= MAX_CACHE) cache.clear()
-                cache[videoId] = url to System.currentTimeMillis()
+                cache[key] = url to System.currentTimeMillis()
                 return url
             } catch (e: IOException) {
                 lastError = e
-                cache.remove(videoId)
+                cache.remove(key)
             } catch (e: Exception) {
                 // ExtractionException, parser error, dan sejenisnya tidak selalu IOException.
                 lastError = IOException(e.message ?: "Gagal mengambil audio", e)
-                cache.remove(videoId)
+                cache.remove(key)
             }
             if (attempt < MAX_ATTEMPTS) {
                 runCatching { Thread.sleep(RETRY_DELAY_MS * attempt) }
@@ -84,7 +88,7 @@ object StreamResolver {
         throw lastError ?: IOException("Audio tidak tersedia untuk $videoId")
     }
 
-    private fun resolveOnce(videoId: String): String {
+    private fun resolveOnce(videoId: String, quality: AudioQuality): String {
         val info = StreamInfo.getInfo(ServiceList.YouTube, "https://www.youtube.com/watch?v=$videoId")
         val candidates = info.audioStreams.mapNotNull { stream ->
             val url = stream.content
@@ -99,7 +103,7 @@ object StreamResolver {
                 )
             }
         }
-        return AudioStreamSelector.pick(candidates)?.url
+        return AudioStreamSelector.pick(candidates, quality)?.url
             ?: throw IOException("Audio tidak tersedia untuk $videoId")
     }
 

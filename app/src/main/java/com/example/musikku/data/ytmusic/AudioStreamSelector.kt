@@ -15,8 +15,16 @@ data class AudioCandidate(
     val isProgressive: Boolean,
 )
 
-/** Tingkat kualitas yang bisa dipilih pengguna (UI-nya menyusul di Fase 2). */
-enum class AudioQuality { HIGH, NORMAL, LOW }
+/**
+ * Tingkat kualitas audio yang bisa dipilih pengguna.
+ * Nama enum disimpan sebagai String di SharedPreferences, jadi jangan diubah
+ * tanpa migrasi (lihat keep-rule di proguard-rules.pro).
+ */
+enum class AudioQuality(val label: String, val hint: String) {
+    HIGH("Tinggi", "Bitrate tertinggi yang tersedia"),
+    NORMAL("Otomatis", "Sekitar 160 kbps, seimbang"),
+    LOW("Hemat", "Bitrate terendah, hemat kuota"),
+}
 
 /**
  * Pemilihan stream audio terbaik dari daftar kandidat.

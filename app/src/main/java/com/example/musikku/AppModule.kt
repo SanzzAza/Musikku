@@ -2,6 +2,7 @@ package com.example.musikku
 
 import android.content.Context
 import com.example.musikku.data.local.FavoritesStore
+import com.example.musikku.data.local.LyricsOffsetStore
 import com.example.musikku.data.local.SearchHistoryStore
 import com.example.musikku.data.local.RecentStore
 import com.example.musikku.data.local.PlaylistStore
@@ -27,12 +28,16 @@ object AppModule {
     lateinit var uiPrefs: UiPreferencesStore
         private set
 
+    lateinit var lyricsOffset: LyricsOffsetStore
+        private set
+
     fun init(context: Context) {
         favorites = FavoritesStore(context.applicationContext)
         searchHistory = SearchHistoryStore(context.applicationContext)
         recents = RecentStore(context.applicationContext)
         playlists = PlaylistStore(context.applicationContext)
         uiPrefs = UiPreferencesStore(context.applicationContext)
+        lyricsOffset = LyricsOffsetStore(context.applicationContext)
     }
 
     /** Katalog musik: YouTube Music (cari, beranda, artis, album, playlist, radio). */
