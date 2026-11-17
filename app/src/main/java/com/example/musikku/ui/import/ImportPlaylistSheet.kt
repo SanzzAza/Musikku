@@ -13,6 +13,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.unit.dp
 import com.example.musikku.AppModule
 import com.example.musikku.data.importer.PlaylistImporter
@@ -87,6 +89,27 @@ fun ImportPlaylistSheet(
             )
 
             Spacer(Modifier.height(14.dp))
+
+            val clipboard = LocalClipboardManager.current
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+            ) {
+                Text(
+                    text = "Tempel dari papan klip",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = accent,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(10.dp))
+                        .clickable(enabled = !busy) {
+                            clipboard.getText()?.text?.let { pasted ->
+                                if (pasted.isNotBlank()) link = pasted.trim()
+                            }
+                        }
+                        .padding(horizontal = 6.dp, vertical = 4.dp),
+                )
+            }
+            Spacer(Modifier.height(6.dp))
 
             OutlinedTextField(
                 value = link,

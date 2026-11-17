@@ -210,7 +210,9 @@ fun LiquidGlassSwitch(
     val trackColor by animateColorAsState(
         targetValue = when {
             checked -> palette.accent
-            prefs.isGlass -> Color.White.copy(alpha = 0.13f)
+            // warmWash otomatis jadi hitam tipis di mode terang, supaya lintasan
+            // saklar tetap kelihatan (dulu putih transparan di atas latar terang).
+            prefs.isGlass -> warmWash(0.16f)
             else -> WarmSurfaceElevated
         },
         animationSpec = tween(240),
@@ -219,8 +221,8 @@ fun LiquidGlassSwitch(
     val borderBrush = if (prefs.isGlass) {
         Brush.verticalGradient(
             listOf(
-                Color.White.copy(alpha = if (checked) 0.45f else 0.28f),
-                Color.White.copy(alpha = 0.08f),
+                warmWash(if (checked) 0.45f else 0.34f),
+                warmWash(0.10f),
             )
         )
     } else {
@@ -263,6 +265,7 @@ fun LiquidGlassSwitch(
                         Brush.verticalGradient(listOf(WarmInk, WarmInk))
                     }
                 )
+                .border(1.dp, warmWash(0.18f), CircleShape)
                 .border(0.75.dp, Color.White.copy(alpha = 0.7f), CircleShape)
         )
     }

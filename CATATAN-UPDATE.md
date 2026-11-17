@@ -1,5 +1,41 @@
 # Catatan update Musikku
 
+## Perbaikan — impor Spotify & mode terang (v1.0.19)
+
+### Impor playlist Spotify (diperbaiki)
+- **Penyebab utama:** link hasil tombol **Bagikan** di Indonesia berbentuk
+  `open.spotify.com/intl-id/playlist/…`. Pengenal link lama membaca segmen pertama
+  sebagai jenis konten (`intl-id`), jadi menolak link yang sebenarnya sah dengan pesan
+  "Link tidak dikenali". Sekarang jenis konten (`playlist`/`album`) dicari di posisi
+  mana pun dalam path.
+- Format lain yang kini ikut diterima:
+  - `open.spotify.com/embed/playlist/…`
+  - `open.spotify.com/user/<nama>/playlist/…` (format lama)
+  - `spotify:playlist:<id>` (URI dari aplikasi Spotify)
+  - domain tanpa `https://`, dan teks share lengkap
+  - `spotify.link/…` dan `apple.co/…` — tautan pendek diikuti dulu (maks. 2 lompatan)
+- **Parser dibuat lebih tahan perubahan:** atribut `<script>` tidak lagi dipatok urutannya,
+  dan `trackList` dicari menelusuri seluruh JSON (dulu lokasinya dipaku ke
+  `props.pageProps.state.data.entity`). Kalau Spotify memindahkan datanya, impor tetap jalan.
+- **Pesan error jadi spesifik:** 404 → "Playlist tidak ditemukan / pastikan publik",
+  401/403 → "Playlist ini privat", 429 → "Sumber membatasi permintaan".
+- Pencarian dicoba dengan dua user-agent (mobile lalu desktop).
+- Tombol **Tempel dari papan klip** di sheet impor — tidak perlu menyeleksi teks manual.
+- Test ditambah jadi **13** (variasi link intl/embed/user/URI/tanpa-skema, tautan pendek,
+  parser dengan atribut script terbalik & `trackList` di kedalaman lain).
+- Catatan: kalau playlist tetap gagal, kemungkinan playlist-nya privat, atau lagunya
+  tidak ada padanannya di YouTube Music.
+
+### Mode terang (diperbaiki)
+- Saklar (toggle) "Hemat data di seluler" & "Lewati bagian hening" sebelumnya tampak
+  seperti lingkaran putih tanpa lintasan karena memakai putih transparan di atas latar
+  terang. Sekarang lintasan saklar memakai `warmWash` (otomatis gelap di mode terang)
+  dan tombolnya diberi garis tepi tipis.
+
+### TENTANG
+- Tautan ke GitHub dihapus. Bagian TENTANG sekarang hanya menampilkan versi aplikasi,
+  ringkasan, catatan teknologi, dan penafian afiliasi.
+
 ## Fase 4 — UI: token desain, mode tema, keadaan kosong, gerak
 
 ### Mode tema (baru)

@@ -38,43 +38,76 @@ class PlaylistImporter(
         .connectTimeout(20, TimeUnit.SECONDS)
         .readTimeout(30, TimeUnit.SECONDS)
         .followRedirects(true)
+        .followSslRedirects(true)
         .build()
 
     suspend fun import(
         rawText: String,
         onProgress: suspend (done: Int, total: Int) -> Unit = { _, _ -> },
     ): Result {
-        val target = PlaylistLinkParser.detect(rawText)
+        var target = PlaylistLinkParser.detect(rawText)
             ?: return Result(
                 error = "Link tidak dikenali. Tempel link playlist Spotify, Apple Music, atau YouTube Music."
             )
 
+        // Tautan pendek (spotify.link / apple.co) diikuti dulu, maksimal 2 lompatan.
+        var hops = 0
+        while (target is LinkTarget.ShortLink && hops < 2) {
+            val resolved = runCatching { resolveRedirect(target.url) }.getOrNull()
+                ?: return Result(error = "Tautan pendek tidak bisa dibuka. Coba tempel link lengkapnya.")
+            target = PlaylistLinkParser.detect(resolved)
+                ?: return Result(error = "Tautan pendek mengarah ke halaman yang tidak dikenali.")
+            hops++
+        }
+
         return try {
             when (target) {
                 is LinkTarget.YouTubeMusic -> importFromYouTube(target.listId)
-                is LinkTarget.Spotify -> {
-                    val url = if (target.isAlbum) {
-                        "https://open.spotify.com/embed/album/${target.id}"
-                    } else {
-                        "https://open.spotify.com/embed/playlist/${target.id}"
-                    }
-                    val html = fetch(url, MOBILE_USER_AGENT)
-                    val parsed = SpotifyPageParser.parse(html)
-                        ?: return Result(error = "Daftar lagu Spotify tidak bisa dibaca. Pastikan playlist-nya publik.")
-                    matchAndSave(parsed, onProgress)
-                }
-                is LinkTarget.AppleMusic -> {
-                    val html = fetch(target.url, DESKTOP_USER_AGENT)
-                    val parsed = AppleMusicPageParser.parse(html)
-                        ?: return Result(error = "Daftar lagu Apple Music tidak bisa dibaca. Pastikan playlist-nya publik.")
-                    matchAndSave(parsed, onProgress)
-                }
+                is LinkTarget.Spotify -> importFromSpotify(target, onProgress)
+                is LinkTarget.AppleMusic -> importFromApple(target.url, onProgress)
+                is LinkTarget.ShortLink -> Result(error = "Tautan pendek terlalu banyak dialihkan.")
             }
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
             Result(error = e.message ?: "Gagal mengimpor playlist.")
         }
+    }
+
+    private suspend fun importFromSpotify(
+        target: LinkTarget.Spotify,
+        onProgress: suspend (Int, Int) -> Unit,
+    ): Result = withContext(Dispatchers.IO) {
+        val kind = if (target.isAlbum) "album" else "playlist"
+        val url = "https://open.spotify.com/embed/$kind/${target.id}"
+        var problem: String? = null
+
+        // Coba dua user-agent: sebagian respons Spotify berbeda tergantung UA.
+        for (userAgent in listOf(MOBILE_USER_AGENT, DESKTOP_USER_AGENT)) {
+            val html = try {
+                fetch(url, userAgent)
+            } catch (e: IOException) {
+                problem = e.message
+                continue
+            }
+            val parsed = SpotifyPageParser.parse(html)
+            if (parsed != null) return@withContext matchAndSave(parsed, onProgress)
+            problem = "Daftar lagu Spotify tidak terbaca (halaman berubah). Coba lagi nanti."
+        }
+
+        Result(error = problem ?: "Gagal membaca playlist Spotify.")
+    }
+
+    private suspend fun importFromApple(
+        url: String,
+        onProgress: suspend (Int, Int) -> Unit,
+    ): Result = withContext(Dispatchers.IO) {
+        val html = fetch(url, DESKTOP_USER_AGENT)
+        val parsed = AppleMusicPageParser.parse(html)
+            ?: return@withContext Result(
+                error = "Daftar lagu Apple Music tidak terbaca. Pastikan playlist bersifat publik."
+            )
+        matchAndSave(parsed, onProgress)
     }
 
     private suspend fun importFromYouTube(listId: String): Result = withContext(Dispatchers.IO) {
@@ -137,17 +170,39 @@ class PlaylistImporter(
         )
     }
 
+    /** Mengikuti tautan pendek dan mengembalikan URL akhir. */
+    private fun resolveRedirect(url: String): String {
+        val request = Request.Builder()
+            .url(url)
+            .header("User-Agent", DESKTOP_USER_AGENT)
+            .header("Accept-Language", "id-ID,id;q=0.9,en;q=0.8")
+            .build()
+        client.newCall(request).execute().use { response ->
+            return response.request.url.toString()
+        }
+    }
+
     private fun fetch(url: String, userAgent: String): String {
         val request = Request.Builder()
             .url(url)
             .header("User-Agent", userAgent)
-            .header("Accept-Language", "en-US,en;q=0.9")
+            .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8")
+            .header("Accept-Language", "id-ID,id;q=0.9,en-US;q=0.8,en;q=0.7")
             .build()
         client.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) {
-                throw IOException("Sumber menolak permintaan (kode ${response.code}).")
+            return when {
+                response.isSuccessful -> response.body?.string().orEmpty()
+                response.code == 404 -> throw IOException(
+                    "Playlist tidak ditemukan. Pastikan tautannya benar dan playlist bersifat publik."
+                )
+                response.code == 401 || response.code == 403 -> throw IOException(
+                    "Playlist ini privat. Ubah menjadi publik lalu coba lagi."
+                )
+                response.code == 429 -> throw IOException(
+                    "Sumber sedang membatasi permintaan. Coba lagi beberapa saat."
+                )
+                else -> throw IOException("Sumber menolak permintaan (kode ${response.code}).")
             }
-            return response.body?.string().orEmpty()
         }
     }
 

@@ -49,7 +49,6 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.musikku.AppModule
@@ -79,7 +78,6 @@ fun AppearanceSheet(
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val accent = MaterialTheme.colorScheme.primary
     val context = LocalContext.current
-    val uriHandler = LocalUriHandler.current
     val appVersion = remember(context) {
         runCatching {
             context.packageManager.getPackageInfo(context.packageName, 0).versionName
@@ -385,13 +383,9 @@ fun AppearanceSheet(
                 )
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    text = "Buka sumber kode di GitHub",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = accent,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(10.dp))
-                        .clickable { uriHandler.openUri("https://github.com/SanzzAza/Musikku") }
-                        .padding(vertical = 4.dp),
+                    text = "Dibuat untuk dipakai sendiri. Tidak berafiliasi dengan YouTube, Spotify, atau Apple Music.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = WarmFaint,
                 )
             }
         }

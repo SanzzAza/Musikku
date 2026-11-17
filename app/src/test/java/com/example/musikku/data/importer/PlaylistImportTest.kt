@@ -117,4 +117,39 @@ class PlaylistImportTest {
         assertNull(PlaylistLinkParser.detect("bukan link sama sekali"))
         assertNull(PlaylistLinkParser.detect("https://open.spotify.com/track/abc"))
     }
+
+    // --- Variasi link yang sering bikin impor gagal ---
+
+    @Test
+    fun `link spotify versi intl embed user dan tanpa skema terbaca`() {
+        val id = "37i9dQZF1DXcBWIGoYBM5M"
+        val variants = listOf(
+            "https://open.spotify.com/intl-id/playlist/$id?si=abc",
+            "https://open.spotify.com/embed/playlist/$id",
+            "https://open.spotify.com/user/budi/playlist/$id",
+            "open.spotify.com/playlist/$id",
+            "spotify:playlist:$id",
+        )
+        variants.forEach { link ->
+            val target = PlaylistLinkParser.detect(link)
+            assertTrue("Gagal mengenali: $link", target is LinkTarget.Spotify)
+            assertEquals("ID salah untuk: $link", id, (target as LinkTarget.Spotify).id)
+        }
+    }
+
+    @Test
+    fun `tautan pendek dikenali supaya bisa diikuti dulu`() {
+        assertTrue(PlaylistLinkParser.detect("https://spotify.link/abc123") is LinkTarget.ShortLink)
+        assertTrue(PlaylistLinkParser.detect("https://apple.co/3xYzAb") is LinkTarget.ShortLink)
+    }
+
+    @Test
+    fun `parser spotify tahan atribut script terbalik dan trackList lebih dalam`() {
+        val html = """<script type="application/json" id="__NEXT_DATA__">{"props":{"pageProps":{"state":{"data":{"wrapper":{"deep":{"trackList":[{"title":"Lagu A","subtitle":"Artis A","duration":100000}]}}}}}}}</script>"""
+        val parsed = SpotifyPageParser.parse(html)
+        assertNotNull(parsed)
+        assertEquals(1, parsed!!.tracks.size)
+        assertEquals("Lagu A", parsed.tracks[0].title)
+        assertEquals(100, parsed.tracks[0].durationSec)
+    }
 }

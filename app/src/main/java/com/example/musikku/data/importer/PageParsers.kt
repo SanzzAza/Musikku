@@ -39,11 +39,35 @@ private fun JsonArray.objects(): List<JsonObject> =
 private fun parseJson(raw: String): JsonObject? =
     runCatching { JsonParser.parseString(raw) }.getOrNull()?.takeIf { it.isJsonObject }?.asJsonObject
 
+/**
+ * Mencari array bernama [key] di mana pun di dalam JSON.
+ *
+ * Dipakai sebagai jaring pengaman: kalau Spotify memindahkan `trackList` ke
+ * kedalaman lain, pengimporan tetap jalan (dulu lokasinya dipatok ke
+ * `props.pageProps.state.data.entity` sehingga gampang patah).
+ */
+private fun findArrayDeep(element: JsonElement, key: String, depth: Int = 0): JsonArray? {
+    if (depth > 12) return null
+    return when {
+        element.isJsonObject -> {
+            val obj = element.asJsonObject
+            obj.arr(key)?.takeIf { it.size() > 0 }
+                ?: obj.entrySet().asSequence()
+                    .firstNotNullOfOrNull { findArrayDeep(it.value, key, depth + 1) }
+        }
+        element.isJsonArray -> element.asJsonArray.asSequence()
+            .firstNotNullOfOrNull { findArrayDeep(it, key, depth + 1) }
+        else -> null
+    }
+}
+
 /** Membaca halaman embed Spotify (`open.spotify.com/embed/playlist/...`). */
 object SpotifyPageParser {
 
+    // Atribut <script> bisa berurutan berbeda antar versi halaman, jadi
+    // id="__NEXT_DATA__" dicari tanpa mematok urutan atribut.
     private val nextDataRegex = Regex(
-        """<script id="__NEXT_DATA__" type="application/json">(.+?)</script>""",
+        """<script[^>]*id="__NEXT_DATA__"[^>]*>(.+?)</script>""",
         RegexOption.DOT_MATCHES_ALL,
     )
 
@@ -56,10 +80,13 @@ object SpotifyPageParser {
             ?.obj("state")
             ?.obj("data")
             ?.obj("entity")
+
+        val trackList = entity?.arr("trackList")?.takeIf { it.size() > 0 }
+            ?: findArrayDeep(root, "trackList")
             ?: return null
 
-        val name = entity.str("name").ifBlank { entity.str("title") }
-        val trackList = entity.arr("trackList") ?: return null
+        val name = entity?.str("name").orEmpty()
+            .ifBlank { entity?.str("title").orEmpty() }
 
         val tracks = trackList.objects().mapNotNull { track ->
             val title = track.str("title").trim()
