@@ -1,5 +1,29 @@
 # Catatan update Musikku
 
+## Fase 3 — Fitur cepat: musik di perangkat & impor playlist
+
+### Musik di perangkat (baru)
+- Entri **“Musik di perangkat”** di tab Pustaka. Sekali ketuk, aplikasi memindai file audio di HP lewat **MediaStore** (butuh izin `READ_MEDIA_AUDIO` di Android 13+, `READ_EXTERNAL_STORAGE` di versi lama — diminta hanya saat fitur ini dibuka).
+- Daftar lagu langsung bisa **Putar semua** atau **Acak**, dan masuk ke antrean pemutar yang sama dengan lagu YouTube Music (lanjut otomatis, kontrol notifikasi, tombol headset).
+- Durasi di bawah 30 detik (nada dering/notifikasi) disaring supaya daftar tidak penuh sampah. Artis `<unknown>` ditampilkan sebagai “Artis tidak dikenal”.
+- **Perbaikan teknis penting:** `PlaybackService` sebelumnya hanya memakai `DefaultHttpDataSource`, jadi file lokal tidak akan pernah bisa dibuka. Sekarang dibungkus `DefaultDataSource` sehingga `content://` (file HP) dan `file://` ikut tertangani, sementara lagu YouTube tetap lewat `ResolvingDataSource` seperti biasa.
+- `SongItem` mendapat field `localUri`; `toMediaItem()` memakai URI file langsung untuk lagu lokal, dan `toSong()` membacanya kembali dari `MediaMetadata` supaya judul/artis tidak hilang saat layar ditutup.
+
+### Impor playlist dari link (baru)
+- Entri **“Impor playlist dari link”** di Pustaka. Tempel link (atau teks share lengkap dari aplikasi lain — URL-nya diambil otomatis).
+- **Spotify**: membaca halaman embed publik (`open.spotify.com/embed/playlist/...` dan `/album/...`), mengambil `__NEXT_DATA__` → `props.pageProps.state.data.entity.trackList`. Tidak butuh API key atau login.
+- **Apple Music**: membaca `serialized-server-data` di halaman playlist publik, mengambil nama playlist dari header dan lagu dari section `trackLockup` (artis dari `artistName`, cadangan `subtitleLinks`).
+- **YouTube Music**: link `music.youtube.com/playlist?list=...` dibaca langsung lewat API internal (paling akurat, tanpa pencarian).
+- Tiap lagu Spotify/Apple dicarikan padanannya di YouTube Music (maksimal 150 lagu, jeda 120 ms per pencarian agar tidak membanjiri server), lalu disimpan sebagai playlist lokal. Progres ditampilkan (“Mencari lagu… 12 dari 50”) dan hasilnya melaporkan berapa lagu yang berhasil ditemukan.
+- Parser bersifat murni (teks → model) sehingga bisa diuji. `PlaylistImportTest` (10 test) memakai contoh HTML asli yang dipendekkan; kalau Spotify/Apple mengubah struktur halaman, CI yang gagal lebih dulu, bukan pengguna.
+
+### Checklist uji manual Fase 3
+1. Pustaka → **Musik di perangkat** → izinkan akses audio. Daftar lagu muncul; ketuk satu lagu, lalu “Putar semua” dan “Acak”.
+2. Kunci layar saat lagu lokal berbunyi — kontrol notifikasi muncul dan judul/artis benar.
+3. Pustaka → **Impor playlist dari link** → tempel link playlist Spotify publik → tunggu progres → “Buka playlist” → lagu tersimpan.
+4. Ulangi dengan link Apple Music, lalu dengan link `music.youtube.com/playlist?list=…` (harus tanpa proses pencarian, langsung jadi).
+5. Tempel link asal-asalan (`https://example.com/foo`) — harus muncul pesan “Link tidak dikenali”, bukan crash.
+
 ## Fase 2 — Fitur pemutaran & lirik
 
 ### Kualitas audio (baru)

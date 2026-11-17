@@ -25,6 +25,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.Favorite
+import androidx.compose.material.icons.rounded.Link
+import androidx.compose.material.icons.rounded.Smartphone
 import androidx.compose.material.icons.rounded.PushPin
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -47,6 +49,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.musikku.AppModule
+import com.example.musikku.data.ytmusic.SongItem
+import com.example.musikku.ui.import.ImportPlaylistSheet
 import com.example.musikku.ui.playlist.LIKED_PLAYLIST_ID
 import com.example.musikku.ui.playlist.PlaylistCover
 import com.example.musikku.ui.playlist.PlaylistNameDialog
@@ -64,6 +68,8 @@ import com.example.musikku.ui.theme.WarmSurface
 fun LibraryScreen(
     onOpenPlaylist: (String) -> Unit,
     onOpenSettings: () -> Unit,
+    onPlaySongs: (List<SongItem>, Int) -> Unit,
+    onShuffle: (List<SongItem>) -> Unit,
 ) {
     val liked by AppModule.favorites.items.collectAsStateWithLifecycle()
     val playlists by AppModule.playlists.items.collectAsStateWithLifecycle()
@@ -71,6 +77,8 @@ fun LibraryScreen(
     val prefs = LocalUiPrefs.current
     val bottomPadding = LocalBottomOverlayPadding.current
     var creating by remember { mutableStateOf(false) }
+    var showLocalMusic by remember { mutableStateOf(false) }
+    var showImport by remember { mutableStateOf(false) }
     var filter by rememberSaveable { mutableStateOf("Semua") }
 
     Column(Modifier.fillMaxSize().statusBarsPadding()) {
@@ -141,6 +149,56 @@ fun LibraryScreen(
                 }
             }
             if (filter != "Disukai") {
+                item(key = "local-music") {
+                    LibraryCardRow(
+                        title = "Musik di perangkat",
+                        subtitle = "Putar MP3/FLAC yang ada di HP",
+                        shape = cardShape,
+                        onClick = { showLocalMusic = true },
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(58.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color.White.copy(alpha = 0.08f))
+                                .border(1.dp, WarmHairline, RoundedCornerShape(12.dp)),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                Icons.Rounded.Smartphone,
+                                null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(26.dp),
+                            )
+                        }
+                    }
+                }
+                item(key = "import-playlist") {
+                    LibraryCardRow(
+                        title = "Impor playlist dari link",
+                        subtitle = "Spotify, Apple Music, YouTube Music",
+                        shape = cardShape,
+                        onClick = { showImport = true },
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(58.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color.White.copy(alpha = 0.08f))
+                                .border(1.dp, WarmHairline, RoundedCornerShape(12.dp)),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                Icons.Rounded.Link,
+                                null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(26.dp),
+                            )
+                        }
+                    }
+                }
+            }
+            if (filter != "Disukai") {
                 items(playlists, key = { it.id }) { p ->
                     LibraryCardRow(
                         title = p.name,
@@ -174,6 +232,30 @@ fun LibraryScreen(
                 }
             }
         }
+    }
+
+    if (showLocalMusic) {
+        LocalMusicSheet(
+            onDismiss = { showLocalMusic = false },
+            onPlay = { songs, index ->
+                showLocalMusic = false
+                onPlaySongs(songs, index)
+            },
+            onShuffle = { songs ->
+                showLocalMusic = false
+                onShuffle(songs)
+            },
+        )
+    }
+
+    if (showImport) {
+        ImportPlaylistSheet(
+            onDismiss = { showImport = false },
+            onOpenPlaylist = { id ->
+                showImport = false
+                onOpenPlaylist(id)
+            },
+        )
     }
 
     if (creating) {

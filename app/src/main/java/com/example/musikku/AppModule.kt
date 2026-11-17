@@ -1,7 +1,9 @@
 package com.example.musikku
 
 import android.content.Context
+import com.example.musikku.data.importer.PlaylistImporter
 import com.example.musikku.data.local.FavoritesStore
+import com.example.musikku.data.local.LocalMusicRepository
 import com.example.musikku.data.local.LyricsOffsetStore
 import com.example.musikku.data.local.SearchHistoryStore
 import com.example.musikku.data.local.RecentStore
@@ -31,6 +33,9 @@ object AppModule {
     lateinit var lyricsOffset: LyricsOffsetStore
         private set
 
+    lateinit var localMusic: LocalMusicRepository
+        private set
+
     fun init(context: Context) {
         favorites = FavoritesStore(context.applicationContext)
         searchHistory = SearchHistoryStore(context.applicationContext)
@@ -38,10 +43,14 @@ object AppModule {
         playlists = PlaylistStore(context.applicationContext)
         uiPrefs = UiPreferencesStore(context.applicationContext)
         lyricsOffset = LyricsOffsetStore(context.applicationContext)
+        localMusic = LocalMusicRepository(context.applicationContext)
     }
 
     /** Katalog musik: YouTube Music (cari, beranda, artis, album, playlist, radio). */
     val ytMusic: YTMusic by lazy { YTMusic() }
 
     val lyrics: LyricsRepository by lazy { LyricsRepository() }
+
+    /** Impor playlist dari link Spotify / Apple Music / YouTube Music. */
+    val playlistImporter: PlaylistImporter by lazy { PlaylistImporter(ytMusic, playlists) }
 }

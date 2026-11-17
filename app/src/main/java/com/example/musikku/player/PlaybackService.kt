@@ -14,6 +14,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DataSpec
+import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.datasource.ResolvingDataSource
 import androidx.media3.exoplayer.ExoPlayer
@@ -61,9 +62,14 @@ class PlaybackService : MediaSessionService() {
             .setConnectTimeoutMs(15_000)
             .setReadTimeoutMs(20_000)
 
+        // Sumber data: HTTP untuk lagu YouTube, plus file lokal (content://) dan
+        // aset lewat DefaultDataSource supaya "Musik di perangkat" bisa diputar.
+        val baseFactory = DefaultDataSource.Factory(this, httpFactory)
+
         // Media item memakai URI "ytm://song/{videoId}". Tepat sebelum diputar,
-        // URI ini di-resolve menjadi URL audio full dari YouTube.
-        val resolvingFactory = ResolvingDataSource.Factory(httpFactory) { dataSpec -> resolve(dataSpec) }
+        // URI ini di-resolve menjadi URL audio full dari YouTube. URI lain
+        // (content://file lokal) dibiarkan apa adanya oleh resolve().
+        val resolvingFactory = ResolvingDataSource.Factory(baseFactory) { dataSpec -> resolve(dataSpec) }
 
         val player = ExoPlayer.Builder(this)
             .setMediaSourceFactory(DefaultMediaSourceFactory(resolvingFactory))

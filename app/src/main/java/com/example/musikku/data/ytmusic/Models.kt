@@ -12,14 +12,17 @@ sealed interface YTItem {
 }
 
 data class SongItem(
-    override val id: String,                 // videoId
+    override val id: String,                 // videoId, atau "local:<mediaId>" untuk file di HP
     override val title: String,
     val artists: List<ArtistRef> = emptyList(),
     val album: AlbumRef? = null,
     val durationSec: Int = 0,
     override val thumbnail: String? = null,
+    /** Kalau diisi, lagu ini file audio di perangkat (bukan YouTube). */
+    val localUri: String? = null,
 ) : YTItem {
     val artistsText: String get() = artists.joinToString(", ") { it.name }
+    val isLocal: Boolean get() = localUri != null
 }
 
 data class AlbumItem(

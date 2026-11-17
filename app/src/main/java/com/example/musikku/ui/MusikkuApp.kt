@@ -232,6 +232,8 @@ fun MusikkuApp(playerVm: PlayerViewModel = viewModel()) {
                             LibraryScreen(
                                 onOpenPlaylist = { nav.navigate(Routes.playlist(it)) },
                                 onOpenSettings = { showSettings = true },
+                                onPlaySongs = play,
+                                onShuffle = shuffle,
                             )
                         }
                         composable(

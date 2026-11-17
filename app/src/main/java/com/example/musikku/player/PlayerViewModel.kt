@@ -373,14 +373,17 @@ internal fun SongItem.toMediaItem(): MediaItem {
                 "artistId" to artists.firstOrNull()?.id,
                 "albumId" to album?.id,
                 "duration" to durationSec,
+                "localUri" to localUri,
             )
         )
         .build()
-    return MediaItem.Builder()
+    val builder = MediaItem.Builder()
         .setMediaId(id)
-        .setUri(PlayerUris.forSong(id))
         .setMediaMetadata(metadata)
-        .build()
+    // Lagu lokal memakai URI file langsung; PlaybackService hanya men-resolve
+    // skema "ytm", jadi file di perangkat lewat tanpa diubah.
+    if (localUri != null) builder.setUri(Uri.parse(localUri)) else builder.setUri(PlayerUris.forSong(id))
+    return builder.build()
 }
 
 /** Fallback bila app dibuka ulang saat service masih memutar lagu. */
@@ -394,5 +397,6 @@ internal fun MediaItem.toSong(): SongItem {
         album = md.albumTitle?.let { AlbumRef(extras?.getString("albumId"), it.toString()) },
         durationSec = extras?.getInt("duration") ?: 0,
         thumbnail = md.artworkUri?.toString(),
+        localUri = extras?.getString("localUri"),
     )
 }
