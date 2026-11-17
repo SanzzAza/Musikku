@@ -64,7 +64,7 @@ class LyricsRepository {
                 .addInterceptor { chain ->
                     chain.proceed(
                         chain.request().newBuilder()
-                            .header("User-Agent", "Musikku/1.0 (https://github.com/SanzzAza/Musikku)")
+                            .header("User-Agent", "Musikku/1.1 (pemutar musik pribadi)")
                             .build()
                     )
                 }
