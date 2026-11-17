@@ -54,6 +54,7 @@ import com.example.musikku.ui.artist.BackButton
 import com.example.musikku.ui.components.PlayShuffleButtons
 import com.example.musikku.ui.components.SongRow
 import com.example.musikku.ui.components.EmptyState
+import com.example.musikku.ui.theme.WarmSurface
 import com.example.musikku.ui.theme.WarmSurfaceElevated
 import com.example.musikku.ui.theme.LocalBottomOverlayPadding
 import com.example.musikku.ui.theme.LocalCoverPalette
