@@ -23,6 +23,7 @@ import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Edit
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.MoreVert
+import androidx.compose.material.icons.rounded.QueueMusic
 import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
@@ -52,6 +53,8 @@ import com.example.musikku.data.ytmusic.SongItem
 import com.example.musikku.ui.artist.BackButton
 import com.example.musikku.ui.components.PlayShuffleButtons
 import com.example.musikku.ui.components.SongRow
+import com.example.musikku.ui.components.EmptyState
+import com.example.musikku.ui.theme.WarmSurfaceElevated
 import com.example.musikku.ui.theme.LocalBottomOverlayPadding
 import com.example.musikku.ui.theme.LocalCoverPalette
 import com.example.musikku.ui.theme.WarmHairline
@@ -156,7 +159,7 @@ fun PlaylistScreen(
                             DropdownMenu(
                                 expanded = menuOpen,
                                 onDismissRequest = { menuOpen = false },
-                                containerColor = Color(0xFF211D1A),
+                                containerColor = WarmSurfaceElevated,
                             ) {
                                 DropdownMenuItem(
                                     text = { Text("Ganti nama", color = WarmInk) },
@@ -192,24 +195,18 @@ fun PlaylistScreen(
                 }
             } else {
                 item {
-                    Column(
-                        Modifier.fillMaxWidth().padding(32.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(10.dp),
-                    ) {
-                        Text("Ayo isi playlist ini", style = MaterialTheme.typography.titleMedium, color = WarmInk)
-                        Text(
-                            if (isLiked) "Ketuk ikon hati di pemutar atau mini player untuk menyimpan lagu ke sini."
-                            else "Ketuk ⋮ di lagu mana pun, lalu pilih \"Tambahkan ke playlist\".",
-                            color = WarmMuted,
-                            textAlign = TextAlign.Center,
-                        )
-                        OutlinedButton(onClick = onFindSongs, border = BorderStroke(1.dp, WarmHairline)) {
-                            Icon(Icons.Rounded.Search, null, Modifier.size(18.dp), tint = WarmInk)
-                            Spacer(Modifier.size(8.dp))
-                            Text("Cari lagu", color = WarmInk)
-                        }
-                    }
+                    EmptyState(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp),
+                        icon = Icons.Rounded.QueueMusic,
+                        title = "Ayo isi playlist ini",
+                        message = if (isLiked) {
+                            "Ketuk ikon hati di pemutar atau mini player untuk menyimpan lagu ke sini."
+                        } else {
+                            "Ketuk ⋮ di lagu mana pun, lalu pilih \"Tambahkan ke playlist\"."
+                        },
+                        actionLabel = "Cari lagu",
+                        onAction = onFindSongs,
+                    )
                 }
             }
         }
@@ -228,7 +225,7 @@ fun PlaylistScreen(
     if (confirmDelete && playlist != null) {
         AlertDialog(
             onDismissRequest = { confirmDelete = false },
-            containerColor = Color(0xFF1B1816),
+            containerColor = WarmSurface,
             title = { Text("Hapus playlist?", color = WarmInk) },
             text = { Text("\"${playlist.name}\" akan dihapus dari Pustaka.", color = WarmMuted) },
             confirmButton = {

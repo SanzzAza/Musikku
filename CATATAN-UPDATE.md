@@ -1,5 +1,39 @@
 # Catatan update Musikku
 
+## Fase 4 — UI: token desain, mode tema, keadaan kosong, gerak
+
+### Mode tema (baru)
+- **Otomatis / Terang / Gelap / Hitam Pekat** — dipilih di Pengaturan → **MODE TEMA**.
+- **Hitam Pekat** memakai latar `#000000` untuk layar OLED (hemat baterai).
+- **Terang** memakai kertas hangat (`#FAF7F2`), bukan putih dingin, supaya tetap terasa satu keluarga dengan obsidian hangat.
+- Perpindahan tema dianimasikan (420 ms) dan ikon status bar otomatis ikut terang/gelap — sebelumnya selalu dipaksa putih sehingga tak terlihat di latar terang.
+
+### Token desain (baru: `ui/theme/Tokens.kt`)
+- Sebelumnya warna adalah `val` tetap yang hanya cocok untuk mode gelap, sehingga mode terang mustahil dibuat. Sekarang semua warna berasal dari `WarmPalette` (Gelap / Hitam Pekat / Terang).
+- Nama token lama (`WarmInk`, `WarmSurface`, `WarmMuted`, `WarmFaint`, `WarmHairline`, …) **tetap sama**, jadi 400+ titik pemakaian di seluruh layar ikut berubah tanpa ditulis ulang satu per satu.
+- Token disembunyikan di balik snapshot state (`WarmTheme`) supaya tetap bisa dibaca dari `remember { }`, `Modifier.composed`, lambda `onClick`, dan fungsi biasa — konteks yang tidak boleh membaca getter `@Composable`. Perubahan tema tetap memicu gambar ulang.
+- Skala baru: `Space` (jarak), `Radius` (sudut), `Motion` (durasi 160/240/420 ms), `ContentMaxWidth`.
+- `warmWash(alpha)` menggantikan `Color.White.copy(alpha = …)` di layar: di mode terang otomatis jadi hitam tipis, jadi kartu & chip tidak "hilang".
+
+### Keadaan kosong & kerangka muat (baru: `ui/components/Placeholders.kt`)
+- Satu komponen `EmptyState` (ikon dalam lingkaran, judul, pesan, aksi opsional) dipakai di **Cari** (tanpa hasil & belum ada riwayat) dan **Playlist kosong** — sebelumnya tiap layar menulis pesannya sendiri tanpa ikon.
+- `SkeletonRowList` menampilkan kerangka baris berkilau saat pencarian pertama, menggantikan layar kosong sesaat.
+
+### Gerak
+- Perpindahan halaman di `NavHost` kini memakai fade + geser halus (240 ms masuk, 160 ms keluar) dengan durasi dari token `Motion`.
+- Bottom sheet dan permukaan kaca ikut menyesuaikan mode tema (tint & fallback putih susu di mode terang).
+
+### Test
+- `ThemeTokensTest` (5 test): pemetaan mode tema, latar hitam murni untuk OLED, dan **kontras teks terhadap latar di semua mode** — kalau ada yang memasang teks terang di latar terang, CI gagal sebelum dirilis.
+
+### Checklist uji manual Fase 4
+1. Pengaturan → **MODE TEMA** → **Terang**: semua layar terbaca, kartu & chip tetap kelihatan, ikon status bar jadi gelap.
+2. Pilih **Hitam Pekat**: latar benar-benar hitam, teks tetap kontras.
+3. Pilih **Otomatis**, lalu ganti tema sistem ke terang/gelap — aplikasi mengikuti.
+4. Cari sesuatu → kerangka baris muncul sekejap; cari kata ngawur → keadaan kosong berikon.
+5. Buka playlist kosong → keadaan kosong dengan tombol "Cari lagu".
+6. Pindah antar tab/halaman → transisi halus, tidak tersendat.
+
 ## Fase 3 — Fitur cepat: musik di perangkat & impor playlist
 
 ### Musik di perangkat (baru)

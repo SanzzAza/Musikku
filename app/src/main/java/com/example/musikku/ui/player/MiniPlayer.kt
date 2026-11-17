@@ -39,6 +39,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.musikku.player.NowPlaying
 import com.example.musikku.ui.components.Artwork
+import com.example.musikku.ui.theme.warmWash
 import com.example.musikku.ui.theme.LocalCoverPalette
 import com.example.musikku.ui.theme.LocalHazeState
 import com.example.musikku.ui.theme.LocalUiPrefs
@@ -145,7 +146,7 @@ fun MiniPlayer(
                     )
                     .border(
                         width = if (prefs.isGlass) 0.75.dp else 0.dp,
-                        color = if (prefs.isGlass) Color.White.copy(alpha = 0.35f) else Color.Transparent,
+                        color = if (prefs.isGlass) warmWash(0.35f) else Color.Transparent,
                         shape = playBtnShape,
                     )
                     .clickable(onClick = onPlayPause),
@@ -187,7 +188,7 @@ fun MiniPlayer(
                 .padding(bottom = 2.dp)
                 .height(2.dp)
                 .clip(CircleShape)
-                .background(Color.White.copy(alpha = 0.12f))
+                .background(warmWash(0.12f))
         ) {
             Box(
                 modifier = Modifier

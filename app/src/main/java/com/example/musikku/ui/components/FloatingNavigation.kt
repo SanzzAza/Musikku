@@ -59,6 +59,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.example.musikku.player.NowPlaying
 import com.example.musikku.ui.player.MiniPlayer
+import com.example.musikku.ui.theme.warmWash
 import com.example.musikku.ui.theme.EditorialBackground
 import com.example.musikku.ui.theme.LocalCoverPalette
 import com.example.musikku.ui.theme.LocalHazeState
@@ -336,7 +337,7 @@ private fun LiquidLensNavBar(
                         colors = listOf(
                             Color.White.copy(alpha = if (isDragging) 0.24f else 0.18f),
                             palette.accent.copy(alpha = if (isDragging) 0.26f else 0.16f),
-                            Color.White.copy(alpha = 0.08f),
+                            warmWash(0.08f),
                         )
                     )
                 )
@@ -345,9 +346,9 @@ private fun LiquidLensNavBar(
                         1.dp,
                         Brush.verticalGradient(
                             listOf(
-                                Color.White.copy(alpha = 0.45f),
+                                warmWash(0.45f),
                                 palette.secondaryAccent.copy(alpha = 0.28f),
-                                Color.White.copy(alpha = 0.12f),
+                                warmWash(0.12f),
                             )
                         ),
                     ),

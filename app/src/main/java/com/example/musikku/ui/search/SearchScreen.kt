@@ -40,6 +40,7 @@ import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.MusicNote
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Search
+import androidx.compose.material.icons.rounded.SearchOff
 import androidx.compose.material.icons.rounded.Verified
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -80,6 +81,9 @@ import com.example.musikku.ui.components.Artwork
 import com.example.musikku.ui.components.ErrorBox
 import com.example.musikku.ui.components.ListItemRow
 import com.example.musikku.ui.components.SongRow
+import com.example.musikku.ui.components.EmptyState
+import com.example.musikku.ui.components.SkeletonRowList
+import com.example.musikku.ui.theme.warmWash
 import com.example.musikku.ui.theme.GlassChip
 import com.example.musikku.ui.theme.LocalBottomOverlayPadding
 import com.example.musikku.ui.theme.LocalUiPrefs
@@ -150,10 +154,10 @@ fun SearchScreen(
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp)
                     .clip(barShape)
-                    .background(if (prefs.isGlass) Color.White.copy(alpha = 0.09f) else WarmSurface)
+                    .background(if (prefs.isGlass) warmWash(0.09f) else WarmSurface)
                     .border(
                         1.dp,
-                        if (prefs.isGlass) Color.White.copy(alpha = 0.20f) else WarmHairline,
+                        if (prefs.isGlass) warmWash(0.20f) else WarmHairline,
                         barShape,
                     )
                     .clickable { searchMode = true }
@@ -208,8 +212,8 @@ fun SearchScreen(
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                 keyboardActions = KeyboardActions(onSearch = { vm.searchNow(); focus.clearFocus() }),
                 colors = TextFieldDefaults.colors(
-                    focusedContainerColor = if (prefs.isGlass) Color.White.copy(alpha = 0.09f) else WarmSurface,
-                    unfocusedContainerColor = if (prefs.isGlass) Color.White.copy(alpha = 0.07f) else WarmSurface,
+                    focusedContainerColor = if (prefs.isGlass) warmWash(0.09f) else WarmSurface,
+                    unfocusedContainerColor = if (prefs.isGlass) warmWash(0.07f) else WarmSurface,
                     focusedTextColor = WarmInk,
                     unfocusedTextColor = WarmInk,
                     cursorColor = accent,
@@ -220,7 +224,7 @@ fun SearchScreen(
                     .weight(1f)
                     .border(
                         1.dp,
-                        if (prefs.isGlass) Color.White.copy(alpha = 0.18f) else WarmHairline,
+                        if (prefs.isGlass) warmWash(0.18f) else WarmHairline,
                         fieldShape,
                     )
                     .focusRequester(focusRequester),
@@ -283,6 +287,11 @@ fun SearchScreen(
 
         when {
             state.error != null -> ErrorBox(state.error!!, onRetry = { vm.searchNow() })
+            // Pencarian pertama: tampilkan kerangka baris, bukan layar kosong.
+            state.loading && !state.searched -> SkeletonRowList(
+                rows = 7,
+                modifier = Modifier.fillMaxSize(),
+            )
             state.searched && !state.loading && isEmpty(state) -> EmptyResult(state.query)
             else -> LazyColumn(
                 Modifier.fillMaxSize(),
@@ -336,15 +345,12 @@ private fun isEmpty(s: SearchUiState) = when (s.tab) {
 
 @Composable
 private fun EmptyResult(query: String) {
-    Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("Tidak ada hasil untuk \"$query\"", style = MaterialTheme.typography.titleMedium, color = WarmInk)
-            Text(
-                "Coba kata kunci lain atau periksa ejaan.",
-                color = WarmMuted,
-                modifier = Modifier.padding(top = 6.dp),
-            )
-        }
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        EmptyState(
+            icon = Icons.Rounded.SearchOff,
+            title = "Tidak ada hasil untuk \"$query\"",
+            message = "Coba kata kunci lain atau periksa ejaan.",
+        )
     }
 }
 
@@ -447,7 +453,7 @@ private fun BrowseGrid(
                     )
                     .border(
                         1.dp,
-                        if (prefs.isGlass) Color.White.copy(alpha = 0.16f) else WarmHairline,
+                        if (prefs.isGlass) warmWash(0.16f) else WarmHairline,
                         tileShape,
                     )
                     .clickable { onCategoryClick(name) }
@@ -501,15 +507,12 @@ private fun RecentList(
     onToggleLike: (SongItem) -> Unit,
 ) {
     if (items.isEmpty()) {
-        Box(Modifier.fillMaxSize().padding(32.dp), contentAlignment = Alignment.Center) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("Putar apa yang kamu suka", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = WarmInk)
-                Text(
-                    "Cari artis, lagu, album, dan playlist.",
-                    color = WarmMuted,
-                    modifier = Modifier.padding(top = 6.dp),
-                )
-            }
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            EmptyState(
+                icon = Icons.Rounded.Search,
+                title = "Putar apa yang kamu suka",
+                message = "Cari artis, lagu, album, dan playlist. Riwayat putarmu akan muncul di sini.",
+            )
         }
         return
     }

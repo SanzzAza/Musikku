@@ -45,6 +45,7 @@ import com.example.musikku.ui.components.SectionTitle
 import com.example.musikku.ui.components.SectionView
 import com.example.musikku.ui.components.SongRow
 import com.example.musikku.ui.components.isOpenableCollection
+import com.example.musikku.ui.theme.warmWash
 import com.example.musikku.ui.theme.LocalBottomOverlayPadding
 import com.example.musikku.ui.theme.WarmInk
 import com.example.musikku.ui.theme.WarmMuted
@@ -168,7 +169,7 @@ fun BackButton(onBack: () -> Unit, modifier: Modifier = Modifier) {
         modifier = modifier
             .clip(CircleShape)
             .background(Color(0x99161311))
-            .border(1.dp, Color.White.copy(alpha = 0.20f), CircleShape),
+            .border(1.dp, warmWash(0.20f), CircleShape),
     ) {
         Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Kembali", tint = WarmInk)
     }

@@ -58,6 +58,7 @@ import coil.compose.AsyncImage
 import com.example.musikku.AppModule
 import com.example.musikku.data.local.UserPlaylist
 import com.example.musikku.data.ytmusic.SongItem
+import com.example.musikku.ui.theme.warmWash
 import com.example.musikku.ui.theme.WarmHairline
 import com.example.musikku.ui.theme.WarmInk
 import com.example.musikku.ui.theme.WarmMuted
@@ -117,7 +118,7 @@ fun PlaylistNameDialog(
     LaunchedEffect(Unit) { runCatching { focus.requestFocus() } }
     AlertDialog(
         onDismissRequest = onDismiss,
-        containerColor = Color(0xFF1B1816),
+        containerColor = WarmSurface,
         title = { Text(title, color = WarmInk) },
         text = {
             OutlinedTextField(
@@ -153,7 +154,7 @@ fun AddToPlaylistHost() {
     ModalBottomSheet(
         onDismissRequest = { PlaylistPicker.close() },
         sheetState = sheetState,
-        containerColor = Color(0xFF171412),
+        containerColor = WarmSurface,
         dragHandle = {
             Box(
                 Modifier
@@ -161,7 +162,7 @@ fun AddToPlaylistHost() {
                     .width(42.dp)
                     .height(4.dp)
                     .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.24f))
+                    .background(warmWash(0.24f))
             )
         },
     ) {
@@ -189,7 +190,7 @@ fun AddToPlaylistHost() {
                             Modifier
                                 .size(54.dp)
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(Color.White.copy(alpha = 0.08f))
+                                .background(warmWash(0.08f))
                                 .border(1.dp, WarmHairline, RoundedCornerShape(12.dp)),
                             contentAlignment = Alignment.Center,
                         ) { Icon(Icons.Rounded.Add, null, Modifier.size(28.dp), tint = MaterialTheme.colorScheme.primary) }

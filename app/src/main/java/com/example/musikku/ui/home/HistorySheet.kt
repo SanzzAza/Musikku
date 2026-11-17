@@ -47,6 +47,8 @@ import com.example.musikku.data.ytmusic.ArtistItem
 import com.example.musikku.data.ytmusic.YTItem
 import com.example.musikku.ui.components.Artwork
 import com.example.musikku.ui.components.itemSubtitle
+import com.example.musikku.ui.theme.WarmSurface
+import com.example.musikku.ui.theme.warmWash
 import com.example.musikku.ui.theme.WarmFaint
 import com.example.musikku.ui.theme.WarmInk
 import com.example.musikku.ui.theme.WarmMuted
@@ -64,7 +66,7 @@ fun HistorySheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = Color(0xFF171412),
+        containerColor = WarmSurface,
         dragHandle = {
             Box(
                 Modifier
@@ -72,7 +74,7 @@ fun HistorySheet(
                     .width(42.dp)
                     .height(4.dp)
                     .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.24f))
+                    .background(warmWash(0.24f))
             )
         },
     ) {

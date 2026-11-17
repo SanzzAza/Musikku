@@ -52,8 +52,10 @@ import androidx.compose.ui.unit.sp
 import com.example.musikku.AppModule
 import com.example.musikku.data.local.AppFontStyle
 import com.example.musikku.data.ytmusic.AudioQuality
+import com.example.musikku.data.local.ThemeMode
 import com.example.musikku.data.local.UiPreferences
 import com.example.musikku.data.local.UiStyle
+import com.example.musikku.ui.theme.warmWash
 import com.example.musikku.ui.theme.EditorialBackground
 import com.example.musikku.ui.theme.LiquidGlassSwitch
 import com.example.musikku.ui.theme.LocalCoverPalette
@@ -77,7 +79,7 @@ fun AppearanceSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = Color(0xFF171412),
+        containerColor = WarmSurface,
         dragHandle = {
             Box(
                 Modifier
@@ -85,7 +87,7 @@ fun AppearanceSheet(
                     .width(42.dp)
                     .height(4.dp)
                     .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.24f))
+                    .background(warmWash(0.24f))
             )
         },
     ) {
@@ -145,6 +147,24 @@ fun AppearanceSheet(
                     onClick = { AppModule.uiPrefs.setStyle(UiStyle.EDITORIAL) },
                     modifier = Modifier.weight(1f),
                 )
+            }
+
+            Spacer(Modifier.height(22.dp))
+            SectionEyebrow("MODE TEMA")
+            Spacer(Modifier.height(10.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                ThemeMode.values().forEach { mode ->
+                    ThemeModeChip(
+                        mode = mode,
+                        selected = prefs.themeMode == mode,
+                        onClick = { AppModule.uiPrefs.setThemeMode(mode) },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
             }
 
             Spacer(Modifier.height(22.dp))
@@ -331,6 +351,43 @@ private fun SectionDivider() {
 }
 
 @Composable
+private fun ThemeModeChip(
+    mode: ThemeMode,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val accent = MaterialTheme.colorScheme.primary
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(14.dp))
+            .background(if (selected) accent.copy(alpha = 0.16f) else WarmSurface)
+            .border(
+                1.dp,
+                if (selected) accent else WarmHairline,
+                RoundedCornerShape(14.dp),
+            )
+            .clickable(onClick = onClick)
+            .padding(horizontal = 8.dp, vertical = 10.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            text = mode.label,
+            style = MaterialTheme.typography.labelLarge,
+            color = if (selected) accent else WarmInk,
+            maxLines = 1,
+        )
+        Spacer(Modifier.height(2.dp))
+        Text(
+            text = mode.hint,
+            style = MaterialTheme.typography.bodySmall,
+            color = WarmFaint,
+            maxLines = 1,
+        )
+    }
+}
+
+@Composable
 private fun SectionEyebrow(title: String) {
     Text(
         text = title,
@@ -399,7 +456,7 @@ private fun StylePreviewCard(
                                 when (idx) {
                                     0 -> palette.accent.copy(alpha = 0.45f)
                                     1 -> palette.secondaryAccent.copy(alpha = 0.35f)
-                                    else -> Color.White.copy(alpha = 0.12f)
+                                    else -> warmWash(0.12f)
                                 }
                             )
                     )
@@ -417,11 +474,11 @@ private fun StylePreviewCard(
                         .height(18.dp)
                         .clip(if (isGlassCard) CircleShape else RoundedCornerShape(6.dp))
                         .background(
-                            if (isGlassCard) Color.White.copy(alpha = 0.16f) else WarmSurfaceElevated
+                            if (isGlassCard) warmWash(0.16f) else WarmSurfaceElevated
                         )
                         .border(
                             0.75.dp,
-                            if (isGlassCard) Color.White.copy(alpha = 0.35f) else WarmHairline,
+                            if (isGlassCard) warmWash(0.35f) else WarmHairline,
                             if (isGlassCard) CircleShape else RoundedCornerShape(6.dp),
                         )
                         .padding(horizontal = 5.dp),
@@ -440,11 +497,11 @@ private fun StylePreviewCard(
                         .height(16.dp)
                         .clip(if (isGlassCard) CircleShape else RoundedCornerShape(5.dp))
                         .background(
-                            if (isGlassCard) Color.White.copy(alpha = 0.12f) else Color(0xFF181513)
+                            if (isGlassCard) warmWash(0.12f) else Color(0xFF181513)
                         )
                         .border(
                             0.75.dp,
-                            if (isGlassCard) Color.White.copy(alpha = 0.30f) else WarmHairline,
+                            if (isGlassCard) warmWash(0.30f) else WarmHairline,
                             if (isGlassCard) CircleShape else RoundedCornerShape(5.dp),
                         )
                         .padding(2.dp),

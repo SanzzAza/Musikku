@@ -68,6 +68,8 @@ import com.example.musikku.data.ytmusic.SongItem
 import com.example.musikku.data.ytmusic.YTItem
 import com.example.musikku.ui.playlist.PlaylistPicker
 import com.example.musikku.ui.poster.SongPosterPicker
+import com.example.musikku.ui.theme.WarmSurfaceElevated
+import com.example.musikku.ui.theme.warmWash
 import com.example.musikku.ui.theme.LocalCoverPalette
 import com.example.musikku.ui.theme.LocalUiPrefs
 import com.example.musikku.ui.theme.WarmHairline
@@ -183,7 +185,7 @@ fun SongMenu(
     DropdownMenu(
         expanded = expanded,
         onDismissRequest = onDismiss,
-        containerColor = Color(0xFF211D1A),
+        containerColor = WarmSurfaceElevated,
     ) {
         if (queueActions != null) {
             DropdownMenuItem(
@@ -249,7 +251,7 @@ fun ItemCard(item: YTItem, onClick: () -> Unit, modifier: Modifier = Modifier, s
             modifier = Modifier
                 .size(size)
                 .clip(artShape)
-                .border(0.8.dp, Color.White.copy(alpha = 0.10f), artShape)
+                .border(0.8.dp, warmWash(0.10f), artShape)
         ) {
             Artwork(
                 url = item.thumbnail,
@@ -327,7 +329,7 @@ fun SectionTitle(text: String, modifier: Modifier = Modifier, action: String? = 
             Surface(
                 onClick = onAction,
                 shape = if (prefs.isGlass) CircleShape else RoundedCornerShape(10.dp),
-                color = Color.White.copy(alpha = 0.05f),
+                color = warmWash(0.05f),
                 border = BorderStroke(1.dp, WarmHairline),
             ) {
                 Text(
@@ -359,8 +361,8 @@ fun PlayShuffleButtons(onPlay: () -> Unit, onShuffle: () -> Unit, modifier: Modi
             modifier = Modifier
                 .size(48.dp)
                 .clip(shuffleShape)
-                .background(if (prefs.isGlass) Color.White.copy(alpha = 0.08f) else WarmSurface)
-                .border(1.dp, if (prefs.isGlass) Color.White.copy(alpha = 0.16f) else WarmHairline, shuffleShape)
+                .background(if (prefs.isGlass) warmWash(0.08f) else WarmSurface)
+                .border(1.dp, if (prefs.isGlass) warmWash(0.16f) else WarmHairline, shuffleShape)
                 .clickable(onClick = onShuffle),
             contentAlignment = Alignment.Center,
         ) {

@@ -11,6 +11,13 @@ enum class UiStyle(val label: String, val tagline: String) {
     EDITORIAL("Editorial", "Matte obsidian hangat, garis tegas & tenang"),
 }
 
+enum class ThemeMode(val label: String, val hint: String) {
+    AUTO("Otomatis", "Ikut pengaturan sistem"),
+    LIGHT("Terang", "Kertas hangat"),
+    DARK("Gelap", "Obsidian hangat"),
+    BLACK("Hitam Pekat", "Hemat baterai OLED"),
+}
+
 enum class AppFontStyle(val label: String, val preview: String) {
     MODERN("Modern", "Bersih & modern"),
     EDITORIAL("Editorial", "Judul serif elegan"),
@@ -20,6 +27,7 @@ enum class AppFontStyle(val label: String, val preview: String) {
 
 data class UiPreferences(
     val style: UiStyle = UiStyle.LIQUID_GLASS,
+    val themeMode: ThemeMode = ThemeMode.AUTO,
     val dynamicCoverTheme: Boolean = true,
     val collapseNavbarOnScroll: Boolean = true,
     val fontStyle: AppFontStyle = AppFontStyle.MODERN,
@@ -45,11 +53,15 @@ class UiPreferencesStore(context: Context) {
         val font = prefs.getString(KEY_FONT, null)
             ?.let { runCatching { AppFontStyle.valueOf(it) }.getOrNull() }
             ?: AppFontStyle.MODERN
+        val mode = prefs.getString(KEY_THEME_MODE, null)
+            ?.let { runCatching { ThemeMode.valueOf(it) }.getOrNull() }
+            ?: ThemeMode.AUTO
         val quality = prefs.getString(KEY_QUALITY, null)
             ?.let { runCatching { AudioQuality.valueOf(it) }.getOrNull() }
             ?: AudioQuality.HIGH
         return UiPreferences(
             style = style,
+            themeMode = mode,
             dynamicCoverTheme = prefs.getBoolean(KEY_DYNAMIC_COVER, true),
             collapseNavbarOnScroll = prefs.getBoolean(KEY_COLLAPSE_NAV, true),
             fontStyle = font,
@@ -60,6 +72,8 @@ class UiPreferencesStore(context: Context) {
     }
 
     fun setStyle(style: UiStyle) = update { it.copy(style = style) }
+
+    fun setThemeMode(mode: ThemeMode) = update { it.copy(themeMode = mode) }
 
     fun setDynamicCoverTheme(enabled: Boolean) = update { it.copy(dynamicCoverTheme = enabled) }
 
@@ -78,6 +92,7 @@ class UiPreferencesStore(context: Context) {
         _state.value = next
         prefs.edit()
             .putString(KEY_STYLE, next.style.name)
+            .putString(KEY_THEME_MODE, next.themeMode.name)
             .putBoolean(KEY_DYNAMIC_COVER, next.dynamicCoverTheme)
             .putBoolean(KEY_COLLAPSE_NAV, next.collapseNavbarOnScroll)
             .putString(KEY_FONT, next.fontStyle.name)
@@ -89,6 +104,7 @@ class UiPreferencesStore(context: Context) {
 
     private companion object {
         const val KEY_STYLE = "ui_style"
+        const val KEY_THEME_MODE = "theme_mode"
         const val KEY_DYNAMIC_COVER = "dynamic_cover_theme"
         const val KEY_COLLAPSE_NAV = "collapse_navbar_on_scroll"
         const val KEY_FONT = "font_style"

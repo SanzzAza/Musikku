@@ -25,6 +25,7 @@ import androidx.compose.ui.platform.LocalContext
 import com.example.musikku.AppModule
 import com.example.musikku.data.local.CollectionBackup
 import com.example.musikku.data.local.CollectionBackupCodec
+import com.example.musikku.ui.theme.WarmSurfaceElevated
 import com.example.musikku.ui.theme.WarmInk
 import com.example.musikku.ui.theme.WarmMuted
 import kotlinx.coroutines.Dispatchers
@@ -85,7 +86,7 @@ fun BackupControls() {
         DropdownMenu(
             expanded = menuOpen,
             onDismissRequest = { menuOpen = false },
-            containerColor = Color(0xFF211D1A),
+            containerColor = WarmSurfaceElevated,
         ) {
             DropdownMenuItem(
                 text = { Text("Backup koleksi", color = WarmInk) },
@@ -100,7 +101,7 @@ fun BackupControls() {
     if (confirmImport) {
         AlertDialog(
             onDismissRequest = { confirmImport = false },
-            containerColor = Color(0xFF1B1816),
+            containerColor = WarmSurface,
             title = { Text("Impor koleksi?", color = WarmInk) },
             text = {
                 Text(

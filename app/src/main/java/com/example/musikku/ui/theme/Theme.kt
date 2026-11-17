@@ -1,15 +1,25 @@
 package com.example.musikku.ui.theme
 
+import android.content.Context
+import android.content.ContextWrapper
+import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Typography
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -17,24 +27,17 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.musikku.data.local.AppFontStyle
+import com.example.musikku.data.local.ThemeMode
 import com.example.musikku.data.local.UiPreferences
 import com.example.musikku.data.local.UiStyle
 import com.example.musikku.ui.player.CoverPalette
 import dev.chrisbanes.haze.HazeState
 
-// Palet Obsidian Hangat & Terakota khas Liquid Glass / Editorial
+// Warna aksen merek (tetap, tidak ikut mode tema).
 val Accent = Color(0xFFE06D47)
 val AccentSecondary = Color(0xFFFFB85C)
-val ObsidianBackground = Color(0xFF0E0D0C)
-val EditorialBackground = Color(0xFF131110)
-val WarmSurface = Color(0xFF1B1816)
-val WarmSurfaceElevated = Color(0xFF25211E)
-val WarmInk = Color(0xFFF5F1EC)
-val WarmMuted = Color(0xFFB3ABA2)
-val WarmFaint = Color(0xFF837B73)
-val WarmHairline = Color(0x22F5F1EC)
-val GlassTintDark = Color(0x701B1816)
-val GlassFallbackDark = Color(0xD9191614)
+
+// Token warna (WarmInk, WarmSurface, ...) ada di Tokens.kt dan mengikuti tema aktif.
 
 val LocalUiPrefs = staticCompositionLocalOf { UiPreferences() }
 val LocalCoverPalette = staticCompositionLocalOf { CoverPalette.Default }
@@ -130,41 +133,124 @@ private fun buildTypography(fontStyle: AppFontStyle): Typography {
 }
 
 @Composable
+private fun animatedWarm(target: WarmPalette): WarmPalette {
+    val spec = tween<Color>(Motion.SLOW)
+    return WarmPalette(
+        background = animateColorAsState(target.background, spec, label = "w-bg").value,
+        backgroundAlt = animateColorAsState(target.backgroundAlt, spec, label = "w-bg-alt").value,
+        surface = animateColorAsState(target.surface, spec, label = "w-surface").value,
+        surfaceElevated = animateColorAsState(target.surfaceElevated, spec, label = "w-surface-el").value,
+        surfaceContainer = animateColorAsState(target.surfaceContainer, spec, label = "w-container").value,
+        surfaceContainerHigh = animateColorAsState(target.surfaceContainerHigh, spec, label = "w-container-hi").value,
+        ink = animateColorAsState(target.ink, spec, label = "w-ink").value,
+        muted = animateColorAsState(target.muted, spec, label = "w-muted").value,
+        faint = animateColorAsState(target.faint, spec, label = "w-faint").value,
+        hairline = animateColorAsState(target.hairline, spec, label = "w-hairline").value,
+        hairlineSoft = animateColorAsState(target.hairlineSoft, spec, label = "w-hairline-soft").value,
+        glassTint = animateColorAsState(target.glassTint, spec, label = "w-glass").value,
+        glassFallback = animateColorAsState(target.glassFallback, spec, label = "w-glass-fb").value,
+        isLight = target.isLight,
+    )
+}
+
+/**
+ * Ikon status bar & navigation bar harus ikut tema: putih di latar gelap,
+ * gelap di latar terang. Sebelumnya selalu dipaksa terang (putih).
+ */
+@Composable
+private fun SystemBarsForLight(isLight: Boolean) {
+    val context = LocalContext.current
+    LaunchedEffect(isLight) {
+        var ctx: Context? = context
+        while (ctx is ContextWrapper && ctx !is ComponentActivity) ctx = ctx.baseContext
+        val activity = ctx as? ComponentActivity ?: return@LaunchedEffect
+        val transparent = android.graphics.Color.TRANSPARENT
+        val style = if (isLight) {
+            SystemBarStyle.light(transparent, transparent)
+        } else {
+            SystemBarStyle.dark(transparent)
+        }
+        activity.enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
+    }
+}
+
+/** Menentukan palet sesuai pilihan pengguna (Otomatis / Terang / Gelap / Hitam pekat). */
+fun resolvePalette(mode: ThemeMode, systemInDark: Boolean): WarmPalette = when (mode) {
+    ThemeMode.LIGHT -> WarmPalette.Light
+    ThemeMode.DARK -> WarmPalette.Dark
+    ThemeMode.BLACK -> WarmPalette.PureBlack
+    ThemeMode.AUTO -> if (systemInDark) WarmPalette.Dark else WarmPalette.Light
+}
+
+@Composable
 fun MusikkuTheme(
     prefs: UiPreferences = UiPreferences(),
     palette: CoverPalette = CoverPalette.Default,
     content: @Composable () -> Unit,
 ) {
+    val target = resolvePalette(prefs.themeMode, isSystemInDarkTheme())
+    val warm = animatedWarm(target)
+
+    // Palet aktif disebar ke seluruh layar lewat WarmTheme (lihat Tokens.kt).
+    // SideEffect dipakai supaya penulisan state terjadi setelah komposisi stabil.
+    SideEffect { WarmTheme.apply(warm) }
+
+    val isLight = warm.isLight
+    SystemBarsForLight(isLight)
     val activePalette = if (prefs.dynamicCoverTheme) palette else CoverPalette.Default
     val animatedPrimary by animateColorAsState(activePalette.accent, tween(600), label = "primary")
     val animatedSecondary by animateColorAsState(activePalette.secondaryAccent, tween(600), label = "secondary")
     val animatedAmbient by animateColorAsState(activePalette.ambient, tween(650), label = "ambient")
     val animatedBg by animateColorAsState(
-        if (prefs.style == UiStyle.LIQUID_GLASS) ObsidianBackground else EditorialBackground,
+        if (prefs.style == UiStyle.LIQUID_GLASS) warm.background else warm.backgroundAlt,
         tween(450),
         label = "bg",
     )
+    val onAccent = if (isLight) Color.White else Color(0xFF1E0B04)
 
-    val colorScheme = darkColorScheme(
-        primary = animatedPrimary,
-        onPrimary = Color(0xFF1E0B04),
-        primaryContainer = animatedPrimary.copy(alpha = 0.22f),
-        onPrimaryContainer = WarmInk,
-        secondary = animatedSecondary,
-        onSecondary = Color(0xFF1E0B04),
-        secondaryContainer = WarmSurfaceElevated,
-        onSecondaryContainer = WarmInk,
-        background = animatedBg,
-        onBackground = WarmInk,
-        surface = WarmSurface,
-        onSurface = WarmInk,
-        surfaceVariant = WarmSurfaceElevated,
-        onSurfaceVariant = WarmMuted,
-        surfaceContainer = Color(0xFF161311),
-        surfaceContainerHigh = Color(0xFF211D1A),
-        outline = WarmHairline,
-        outlineVariant = Color(0x16F5F1EC),
-    )
+    val colorScheme = if (isLight) {
+        lightColorScheme(
+            primary = animatedPrimary,
+            onPrimary = onAccent,
+            primaryContainer = animatedPrimary.copy(alpha = 0.16f),
+            onPrimaryContainer = warm.ink,
+            secondary = animatedSecondary,
+            onSecondary = onAccent,
+            secondaryContainer = warm.surfaceElevated,
+            onSecondaryContainer = warm.ink,
+            background = animatedBg,
+            onBackground = warm.ink,
+            surface = warm.surface,
+            onSurface = warm.ink,
+            surfaceVariant = warm.surfaceElevated,
+            onSurfaceVariant = warm.muted,
+            surfaceContainer = warm.surfaceContainer,
+            surfaceContainerHigh = warm.surfaceContainerHigh,
+            outline = warm.hairline,
+            outlineVariant = warm.hairlineSoft,
+        )
+    } else {
+        darkColorScheme(
+            primary = animatedPrimary,
+            onPrimary = onAccent,
+            primaryContainer = animatedPrimary.copy(alpha = 0.22f),
+            onPrimaryContainer = warm.ink,
+            secondary = animatedSecondary,
+            onSecondary = onAccent,
+            secondaryContainer = warm.surfaceElevated,
+            onSecondaryContainer = warm.ink,
+            background = animatedBg,
+            onBackground = warm.ink,
+            surface = warm.surface,
+            onSurface = warm.ink,
+            surfaceVariant = warm.surfaceElevated,
+            onSurfaceVariant = warm.muted,
+            surfaceContainer = warm.surfaceContainer,
+            surfaceContainerHigh = warm.surfaceContainerHigh,
+            outline = warm.hairline,
+            outlineVariant = warm.hairlineSoft,
+        )
+    }
 
     val smoothedPalette = CoverPalette(
         ambient = animatedAmbient,

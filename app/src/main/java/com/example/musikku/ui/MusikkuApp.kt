@@ -9,7 +9,9 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -72,6 +74,7 @@ import com.example.musikku.ui.settings.AppearanceSheet
 import com.example.musikku.ui.theme.AmbientBackdrop
 import com.example.musikku.ui.theme.LocalBottomOverlayPadding
 import com.example.musikku.ui.theme.LocalHazeState
+import com.example.musikku.ui.theme.Motion
 import com.example.musikku.ui.theme.MusikkuTheme
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.haze
@@ -206,6 +209,17 @@ fun MusikkuApp(playerVm: PlayerViewModel = viewModel()) {
                         navController = nav,
                         startDestination = Routes.HOME,
                         modifier = Modifier.fillMaxSize(),
+                        // Gerak halaman: masuk dengan geser halus + fade, keluar cepat.
+                        enterTransition = {
+                            fadeIn(tween(Motion.NORMAL)) +
+                                slideInHorizontally(tween(Motion.NORMAL)) { it / 14 }
+                        },
+                        exitTransition = { fadeOut(tween(Motion.FAST)) },
+                        popEnterTransition = { fadeIn(tween(Motion.NORMAL)) },
+                        popExitTransition = {
+                            fadeOut(tween(Motion.FAST)) +
+                                slideOutHorizontally(tween(Motion.NORMAL)) { it / 14 }
+                        },
                     ) {
                         composable(Routes.HOME) {
                             HomeScreen(

@@ -31,6 +31,7 @@ import androidx.core.content.ContextCompat
 import coil.compose.AsyncImage
 import com.example.musikku.AppModule
 import com.example.musikku.data.ytmusic.SongItem
+import com.example.musikku.ui.theme.warmWash
 import com.example.musikku.ui.theme.WarmFaint
 import com.example.musikku.ui.theme.WarmHairline
 import com.example.musikku.ui.theme.WarmInk
@@ -88,7 +89,7 @@ fun LocalMusicSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = Color(0xFF171412),
+        containerColor = WarmSurface,
         dragHandle = {
             Spacer(
                 Modifier
@@ -96,7 +97,7 @@ fun LocalMusicSheet(
                     .width(42.dp)
                     .height(4.dp)
                     .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.24f))
+                    .background(warmWash(0.24f))
             )
         },
     ) {

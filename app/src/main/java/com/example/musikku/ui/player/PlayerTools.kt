@@ -65,7 +65,7 @@ fun SleepTimerSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = Color(0xFF171412),
+        containerColor = WarmSurface,
         dragHandle = {
             Box(
                 Modifier
@@ -154,7 +154,7 @@ fun QueueSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = Color(0xFF171412),
+        containerColor = WarmSurface,
         dragHandle = {
             Box(
                 Modifier

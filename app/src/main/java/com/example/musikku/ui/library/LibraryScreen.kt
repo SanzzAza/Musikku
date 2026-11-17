@@ -54,6 +54,7 @@ import com.example.musikku.ui.import.ImportPlaylistSheet
 import com.example.musikku.ui.playlist.LIKED_PLAYLIST_ID
 import com.example.musikku.ui.playlist.PlaylistCover
 import com.example.musikku.ui.playlist.PlaylistNameDialog
+import com.example.musikku.ui.theme.warmWash
 import com.example.musikku.ui.theme.GlassChip
 import com.example.musikku.ui.theme.LocalBottomOverlayPadding
 import com.example.musikku.ui.theme.LocalCoverPalette
@@ -160,7 +161,7 @@ fun LibraryScreen(
                             modifier = Modifier
                                 .size(58.dp)
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(Color.White.copy(alpha = 0.08f))
+                                .background(warmWash(0.08f))
                                 .border(1.dp, WarmHairline, RoundedCornerShape(12.dp)),
                             contentAlignment = Alignment.Center,
                         ) {
@@ -184,7 +185,7 @@ fun LibraryScreen(
                             modifier = Modifier
                                 .size(58.dp)
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(Color.White.copy(alpha = 0.08f))
+                                .background(warmWash(0.08f))
                                 .border(1.dp, WarmHairline, RoundedCornerShape(12.dp)),
                             contentAlignment = Alignment.Center,
                         ) {
@@ -222,7 +223,7 @@ fun LibraryScreen(
                             modifier = Modifier
                                 .size(58.dp)
                                 .clip(RoundedCornerShape(12.dp))
-                                .background(Color.White.copy(alpha = 0.08f))
+                                .background(warmWash(0.08f))
                                 .border(1.dp, WarmHairline, RoundedCornerShape(12.dp)),
                             contentAlignment = Alignment.Center,
                         ) {
@@ -287,8 +288,8 @@ private fun LibraryCardRow(
         modifier = Modifier
             .fillMaxWidth()
             .clip(shape)
-            .background(if (prefs.isGlass) Color.White.copy(alpha = 0.06f) else WarmSurface)
-            .border(1.dp, if (prefs.isGlass) Color.White.copy(alpha = 0.14f) else WarmHairline, shape)
+            .background(if (prefs.isGlass) warmWash(0.06f) else WarmSurface)
+            .border(1.dp, if (prefs.isGlass) warmWash(0.14f) else WarmHairline, shape)
             .clickable(onClick = onClick)
             .padding(10.dp),
         verticalAlignment = Alignment.CenterVertically,

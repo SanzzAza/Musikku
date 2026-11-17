@@ -97,6 +97,7 @@ import com.example.musikku.data.lyrics.Lyrics
 import com.example.musikku.ui.lyrics.EditorialLyricsStage
 import com.example.musikku.ui.poster.PosterMode
 import com.example.musikku.ui.poster.SongPosterPicker
+import com.example.musikku.ui.theme.WarmSurfaceElevated
 import com.example.musikku.ui.theme.EditorialBackground
 import com.example.musikku.ui.theme.GlassCircleIconButton
 import com.example.musikku.ui.theme.LocalCoverPalette
@@ -738,7 +739,7 @@ private fun PlayerOverflowMenu(
     DropdownMenu(
         expanded = expanded,
         onDismissRequest = onDismiss,
-        containerColor = Color(0xFF211D1A),
+        containerColor = WarmSurfaceElevated,
     ) {
         DropdownMenuItem(
             text = { Text("Tambahkan ke playlist", color = WarmInk) },

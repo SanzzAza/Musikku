@@ -65,6 +65,7 @@ import com.example.musikku.player.NowPlaying
 import com.example.musikku.ui.components.Artwork
 import com.example.musikku.ui.components.SectionView
 import com.example.musikku.ui.components.SongRow
+import com.example.musikku.ui.theme.warmWash
 import com.example.musikku.ui.theme.GlassChip
 import com.example.musikku.ui.theme.LocalBottomOverlayPadding
 import com.example.musikku.ui.theme.LocalUiPrefs
@@ -360,7 +361,7 @@ private fun SpeedDialTile(
                 .clip(shape)
                 .border(
                     width = if (isCurrent) 1.5.dp else 0.8.dp,
-                    color = if (isCurrent) accent else Color.White.copy(alpha = 0.10f),
+                    color = if (isCurrent) accent else warmWash(0.10f),
                     shape = shape,
                 )
         ) {
@@ -407,8 +408,8 @@ private fun ShuffleDiceTile(
                 .fillMaxWidth()
                 .aspectRatio(1f)
                 .clip(shape)
-                .background(if (prefs.isGlass) Color.White.copy(alpha = 0.08f) else WarmSurface)
-                .border(1.dp, if (prefs.isGlass) Color.White.copy(alpha = 0.16f) else WarmHairline, shape)
+                .background(if (prefs.isGlass) warmWash(0.08f) else WarmSurface)
+                .border(1.dp, if (prefs.isGlass) warmWash(0.16f) else WarmHairline, shape)
                 .clickable(onClick = onClick),
             contentAlignment = Alignment.Center,
         ) {

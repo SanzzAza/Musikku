@@ -16,6 +16,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.musikku.AppModule
 import com.example.musikku.data.importer.PlaylistImporter
+import com.example.musikku.ui.theme.warmWash
 import com.example.musikku.ui.theme.WarmFaint
 import com.example.musikku.ui.theme.WarmHairline
 import com.example.musikku.ui.theme.WarmInk
@@ -48,7 +49,7 @@ fun ImportPlaylistSheet(
     ModalBottomSheet(
         onDismissRequest = onDismiss,
         sheetState = sheetState,
-        containerColor = Color(0xFF171412),
+        containerColor = WarmSurface,
         dragHandle = {
             Spacer(
                 Modifier
@@ -56,7 +57,7 @@ fun ImportPlaylistSheet(
                     .width(42.dp)
                     .height(4.dp)
                     .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.24f))
+                    .background(warmWash(0.24f))
             )
         },
     ) {

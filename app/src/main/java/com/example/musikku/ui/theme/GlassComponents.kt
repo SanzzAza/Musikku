@@ -64,8 +64,16 @@ fun Modifier.adaptiveSurface(
     shadowElevation: Dp = if (isGlass) 18.dp else 4.dp,
 ): Modifier = composed {
     if (isGlass) {
-        val tint = if (elevated) Color(0x66241F1C) else Color(0x521A1715)
-        val fallback = if (elevated) Color(0xEB221E1B) else GlassFallbackDark
+        // Tint & fallback mengikuti tema; di mode terang kaca jadi putih susu,
+        // bukan gelap transparan yang bikin teks tak terbaca.
+        val baseTint = GlassTintDark
+        val tint = if (elevated) baseTint else baseTint.copy(alpha = baseTint.alpha * 0.78f)
+        val baseFallback = GlassFallbackDark
+        val fallback = if (elevated) {
+            baseFallback.copy(alpha = 0.92f)
+        } else {
+            baseFallback.copy(alpha = 0.85f)
+        }
         val style = remember(tint, fallback, blurRadius) {
             HazeStyle(
                 backgroundColor = ObsidianBackground,
@@ -129,6 +137,8 @@ fun AmbientBackdrop(
     val prefs = LocalUiPrefs.current
     val palette = LocalCoverPalette.current
     val bg = MaterialTheme.colorScheme.background
+    // Di latar terang, semburat warna harus jauh lebih tipis agar tidak jadi kusam.
+    val glow = if (WarmTheme.isLight) 0.26f else 1f
 
     Box(
         modifier = modifier
@@ -139,8 +149,8 @@ fun AmbientBackdrop(
                     drawRect(
                         brush = Brush.radialGradient(
                             colors = listOf(
-                                palette.ambient.copy(alpha = 0.62f * intensity),
-                                palette.accent.copy(alpha = 0.14f * intensity),
+                                palette.ambient.copy(alpha = 0.62f * intensity * glow),
+                                palette.accent.copy(alpha = 0.14f * intensity * glow),
                                 Color.Transparent,
                             ),
                             center = Offset(size.width * 0.24f, size.height * 0.06f),
@@ -150,7 +160,7 @@ fun AmbientBackdrop(
                     drawRect(
                         brush = Brush.radialGradient(
                             colors = listOf(
-                                palette.secondaryAccent.copy(alpha = 0.12f * intensity),
+                                palette.secondaryAccent.copy(alpha = 0.12f * intensity * glow),
                                 Color.Transparent,
                             ),
                             center = Offset(size.width * 0.88f, size.height * 0.34f),
@@ -162,7 +172,7 @@ fun AmbientBackdrop(
                     drawRect(
                         brush = Brush.verticalGradient(
                             colors = listOf(
-                                palette.ambient.copy(alpha = 0.20f * intensity),
+                                palette.ambient.copy(alpha = 0.20f * intensity * glow),
                                 Color.Transparent,
                             ),
                             startY = 0f,
