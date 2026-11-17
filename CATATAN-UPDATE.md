@@ -1,5 +1,32 @@
 # Catatan update Musikku
 
+## Fase 1 — Fondasi (build, mesin stream, ikon)
+
+### Platform & build
+- `compileSdk`/`targetSdk` 34 → **35** (Android 15), AGP 8.5.2 → **8.7.3**.
+- **R8/minify dinyalakan** untuk build release (`isMinifyEnabled = true`). Resource shrinking tetap mati sampai ada waktu menguji perilaku runtime.
+- `proguard-rules.pro` diperluas: keep untuk model Gson (favorit, playlist, snapshot, backup), enum yang disimpan sebagai String, dan seluruh paket NewPipeExtractor + Rhino — tanpa ini data pengguna bisa hilang atau pemutaran gagal tanpa pesan error.
+- Workflow `check.yml` sekarang juga menjalankan `assembleRelease` di branch, jadi masalah keep-rule R8 ketahuan **sebelum** push ke main.
+
+### Mesin stream
+- `NewPipeExtractor` v0.26.5 → **v0.27.1** (rilis 10 Nov 2026).
+- `Media3` 1.4.1 → **1.9.4**.
+- Pemilihan stream dipindah ke `AudioStreamSelector` (fungsi murni, ada unit test): semua kandidat audio-only dipertimbangkan, bukan hanya `PROGRESSIVE_HTTP`, dengan prioritas bitrate tertinggi lalu codec Opus/WebM.
+- Resolusi URL sekarang **retry 2x** dengan pembuangan cache di antaranya; error asli ikut disertakan di pesan supaya penyebabnya kelihatan.
+- Disiapkan `AudioQuality` (HIGH/NORMAL/LOW) di lapisan data — UI-nya menyusul di Fase 2.
+
+### Ikon
+- Adaptive icon sebenarnya (`mipmap-anydpi-v26`) + lapisan **monochrome** untuk themed icon Android 13+, plus PNG legasi semua densitas (mdpi–xxxhdpi) untuk Android 7–8.
+- Ikon lama memakai hijau Spotify (#1ED760) padahal aksen aplikasi terakota (#E06D47) — sekarang diseragamkan ke terakota dengan latar not krem (#F5F1EC).
+
+### Checklist uji manual Fase 1
+1. Install APK rilis baru di atas versi lama (keystore sama) — pastikan data favorit/playlist/snapshot masih ada (uji keep-rule R8).
+2. Putar 5 lagu berbeda; perhatikan tidak ada "Audio tidak tersedia" baru.
+3. Buat playlist, tambah lagu, tutup paksa, buka lagi — pastikan playlist utuh.
+4. Ekspor backup JSON, impor lagi.
+5. Lihat ikon di launcher: di Android 13+ coba aktifkan "Themed icons" dan pastikan ikon ikut tema.
+
+
 ## Perubahan
 - Layar pemutar: tombol Antrean untuk melihat daftar, memilih lagu, mengubah urutan dan menghapus lagu lain. Bila shuffle aktif urutan putar dapat berbeda dari urutan daftar.
 - Sleep timer 15/30/45/60 menit, dapat dibatalkan atau diganti, berjalan di layanan pemutar ketika layar Activity ditutup. Timer dibatalkan jika layanan atau proses dihentikan; penjadwalan Android dapat tertunda saat perangkat tidur.

@@ -6,12 +6,12 @@ plugins {
 
 android {
     namespace = "com.example.musikku"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.example.musikku"
         minSdk = 24
-        targetSdk = 34
+        targetSdk = 35
         // Di GitHub Actions nilai ini diisi otomatis dari nomor build
         versionCode = System.getenv("VERSION_CODE")?.toIntOrNull() ?: 1
         versionName = System.getenv("VERSION_NAME") ?: "1.0"
@@ -31,7 +31,11 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            // Fase 1: R8 dinyalakan. Keep rules untuk Gson/NewPipe ada di proguard-rules.pro.
+            isMinifyEnabled = true
+            // Resource shrinking belum diaktifkan: beberapa resource dibaca lewat nama,
+            // jadi aktifkan hanya setelah ada waktu menguji perilaku runtime.
+            isShrinkResources = false
             val release = signingConfigs.getByName("release")
             // Pakai keystore rilis jika tersedia, kalau tidak pakai debug key (build lokal)
             signingConfig = if (release.storeFile != null) release else signingConfigs.getByName("debug")
@@ -39,6 +43,9 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+        }
+        debug {
+            isMinifyEnabled = false
         }
     }
     compileOptions {
@@ -52,6 +59,19 @@ android {
     }
     buildFeatures {
         compose = true
+    }
+    packaging {
+        resources {
+            // Hanya file lisensi/duplikat meta yang dibuang.
+            // JANGAN buang META-INF/services: Rhino & MLKit memakai ServiceLoader.
+            excludes += setOf(
+                "META-INF/{AL2.0,LGPL2.1}",
+                "META-INF/DEPENDENCIES",
+                "META-INF/LICENSE*",
+                "META-INF/NOTICE*",
+                "META-INF/INDEX.LIST"
+            )
+        }
     }
 }
 
@@ -72,8 +92,9 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.8.1")
 
     // Pemutar musik (ExoPlayer + MediaSession untuk background & notifikasi)
-    implementation("androidx.media3:media3-exoplayer:1.4.1")
-    implementation("androidx.media3:media3-session:1.4.1")
+    // 1.9.4 = rilis stabil terbaru yang masih kompatibel dengan compileSdk 35
+    implementation("androidx.media3:media3-exoplayer:1.9.4")
+    implementation("androidx.media3:media3-session:1.9.4")
 
     // Network
     implementation("com.squareup.retrofit2:retrofit:2.11.0")
@@ -91,7 +112,7 @@ dependencies {
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
 
-    // Audio full dari YouTube Music
-    implementation("com.github.TeamNewPipe:NewPipeExtractor:v0.26.5")
+    // Audio full dari YouTube Music (v0.27.1 = rilis stabil terbaru)
+    implementation("com.github.TeamNewPipe:NewPipeExtractor:v0.27.1")
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs_nio:2.1.2")
 }

@@ -18,11 +18,18 @@ import java.util.concurrent.TimeUnit
 /**
  * Mengambil URL stream audio FULL dari sebuah videoId YouTube (Music)
  * memakai NewPipe Extractor. BLOCKING — panggil dari background thread.
+ *
+ * Fase 1: pemilihan stream diserahkan ke [AudioStreamSelector] (semua kandidat
+ * audio-only dipertimbangkan, bukan hanya yang progressive), ditambah percobaan
+ * ulang dengan pembuangan cache supaya gangguan sesaat tidak langsung jadi
+ * "lagu tidak bisa diputar".
  */
 object StreamResolver {
 
     private const val TTL_MS = 60 * 60 * 1000L // URL YouTube berlaku ± 6 jam, kita refresh tiap 1 jam
     private const val MAX_CACHE = 100
+    private const val MAX_ATTEMPTS = 2
+    private const val RETRY_DELAY_MS = 300L
 
     private val client = OkHttpClient.Builder()
         .connectTimeout(15, TimeUnit.SECONDS)
@@ -44,21 +51,56 @@ object StreamResolver {
     }
 
     /** Buang URL lama agar percobaan ulang mengambil URL stream baru. */
-    fun invalidate(videoId: String) { cache.remove(videoId) }
+    fun invalidate(videoId: String) {
+        cache.remove(videoId)
+    }
 
+    @Throws(IOException::class)
     fun audioUrl(videoId: String): String {
-        cache[videoId]?.let { (url, at) -> if (System.currentTimeMillis() - at < TTL_MS) return url }
+        cache[videoId]?.let { (url, at) ->
+            if (System.currentTimeMillis() - at < TTL_MS) return url
+        }
         ensureInit()
+
+        var lastError: IOException? = null
+        for (attempt in 1..MAX_ATTEMPTS) {
+            try {
+                val url = resolveOnce(videoId)
+                if (cache.size >= MAX_CACHE) cache.clear()
+                cache[videoId] = url to System.currentTimeMillis()
+                return url
+            } catch (e: IOException) {
+                lastError = e
+                cache.remove(videoId)
+            } catch (e: Exception) {
+                // ExtractionException, parser error, dan sejenisnya tidak selalu IOException.
+                lastError = IOException(e.message ?: "Gagal mengambil audio", e)
+                cache.remove(videoId)
+            }
+            if (attempt < MAX_ATTEMPTS) {
+                runCatching { Thread.sleep(RETRY_DELAY_MS * attempt) }
+            }
+        }
+        throw lastError ?: IOException("Audio tidak tersedia untuk $videoId")
+    }
+
+    private fun resolveOnce(videoId: String): String {
         val info = StreamInfo.getInfo(ServiceList.YouTube, "https://www.youtube.com/watch?v=$videoId")
-        val url = info.audioStreams
-            .filter { it.deliveryMethod == DeliveryMethod.PROGRESSIVE_HTTP && it.isUrl }
-            .maxByOrNull { it.averageBitrate }
-            ?.content
+        val candidates = info.audioStreams.mapNotNull { stream ->
+            val url = stream.content
+            if (url.isNullOrBlank()) {
+                null
+            } else {
+                AudioCandidate(
+                    url = url,
+                    bitrateKbps = stream.averageBitrate.takeIf { it > 0 } ?: 0,
+                    mimeType = stream.format?.mimeType,
+                    isProgressive = stream.deliveryMethod == DeliveryMethod.PROGRESSIVE_HTTP,
+                )
+            }
+        }
+        return AudioStreamSelector.pick(candidates)?.url
             ?: throw IOException("Audio tidak tersedia untuk $videoId")
-        // Batasi ukuran cache: dipakai berlama-lama, cache tanpa batas memakan memori
-        if (cache.size >= MAX_CACHE) cache.clear()
-        cache[videoId] = url to System.currentTimeMillis()
-        return url
     }
 
     private class OkHttpDownloader(private val client: OkHttpClient) : Downloader() {
