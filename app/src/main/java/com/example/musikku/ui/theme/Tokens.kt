@@ -1,7 +1,10 @@
 package com.example.musikku.ui.theme
 
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 /**
@@ -152,3 +155,15 @@ object Motion {
 
 /** Lebar konten maksimum agar tablet & layar lebar tidak melar. */
 val ContentMaxWidth = 720.dp
+
+/**
+ * Padding samping adaptif: di ponsel tetap 16dp, di tablet/landscape konten
+ * dipusatkan sehingga tidak melebar mengikuti layar.
+ */
+@Composable
+fun adaptiveSidePadding(base: Dp = 16.dp): Dp {
+    val widthDp = LocalConfiguration.current.screenWidthDp
+    if (widthDp < 600) return base
+    val extra = (widthDp - ContentMaxWidth.value) / 2f
+    return base + extra.coerceAtLeast(0f).dp
+}

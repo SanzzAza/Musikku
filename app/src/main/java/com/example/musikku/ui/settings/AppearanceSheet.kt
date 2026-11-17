@@ -38,6 +38,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -47,6 +48,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.musikku.AppModule
@@ -75,6 +78,13 @@ fun AppearanceSheet(
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val accent = MaterialTheme.colorScheme.primary
+    val context = LocalContext.current
+    val uriHandler = LocalUriHandler.current
+    val appVersion = remember(context) {
+        runCatching {
+            context.packageManager.getPackageInfo(context.packageName, 0).versionName
+        }.getOrNull() ?: "1.0"
+    }
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -334,6 +344,55 @@ fun AppearanceSheet(
                         }
                     }
                 }
+            }
+
+            Spacer(Modifier.height(22.dp))
+            SectionEyebrow("TENTANG")
+            Spacer(Modifier.height(10.dp))
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(20.dp))
+                    .background(WarmSurface)
+                    .border(1.dp, WarmHairline, RoundedCornerShape(20.dp))
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "Musikku",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = WarmInk,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Text(
+                        text = "v$appVersion",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = accent,
+                    )
+                }
+                Text(
+                    text = "Pemutar musik YouTube Music ringan, dengan musik lokal, impor playlist, dan Studio Poster.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = WarmMuted,
+                )
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    text = "Dibangun dengan Jetpack Compose, Media3/ExoPlayer, dan NewPipeExtractor.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = WarmFaint,
+                )
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    text = "Buka sumber kode di GitHub",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = accent,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(10.dp))
+                        .clickable { uriHandler.openUri("https://github.com/SanzzAza/Musikku") }
+                        .padding(vertical = 4.dp),
+                )
             }
         }
     }

@@ -54,6 +54,7 @@ import com.example.musikku.ui.import.ImportPlaylistSheet
 import com.example.musikku.ui.playlist.LIKED_PLAYLIST_ID
 import com.example.musikku.ui.playlist.PlaylistCover
 import com.example.musikku.ui.playlist.PlaylistNameDialog
+import com.example.musikku.ui.theme.adaptiveSidePadding
 import com.example.musikku.ui.theme.warmWash
 import com.example.musikku.ui.theme.GlassChip
 import com.example.musikku.ui.theme.LocalBottomOverlayPadding
@@ -122,8 +123,9 @@ fun LibraryScreen(
 
         val cardShape = RoundedCornerShape(if (prefs.isGlass) 18.dp else 14.dp)
 
+        val side = adaptiveSidePadding()
         LazyColumn(
-            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 6.dp, bottom = bottomPadding + 18.dp),
+            contentPadding = PaddingValues(start = side, end = side, top = 6.dp, bottom = bottomPadding + 18.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             if (filter != "Playlist") {

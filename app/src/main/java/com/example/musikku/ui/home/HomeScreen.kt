@@ -65,6 +65,7 @@ import com.example.musikku.player.NowPlaying
 import com.example.musikku.ui.components.Artwork
 import com.example.musikku.ui.components.SectionView
 import com.example.musikku.ui.components.SongRow
+import com.example.musikku.ui.components.SkeletonBlock
 import com.example.musikku.ui.theme.warmWash
 import com.example.musikku.ui.theme.GlassChip
 import com.example.musikku.ui.theme.LocalBottomOverlayPadding
@@ -175,6 +176,36 @@ fun HomeScreen(
         }
 
         // Deretan Mood Filter Chips ala Auralys
+        if (state.loading && state.sections.isEmpty()) {
+            item(key = "loading-skeleton") {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    SkeletonBlock(Modifier.width(120.dp).height(14.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        repeat(3) {
+                            SkeletonBlock(
+                                modifier = Modifier.size(width = 118.dp, height = 150.dp),
+                                shape = RoundedCornerShape(18.dp),
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(6.dp))
+                    SkeletonBlock(Modifier.width(96.dp).height(14.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        repeat(3) {
+                            SkeletonBlock(
+                                modifier = Modifier.size(width = 118.dp, height = 150.dp),
+                                shape = RoundedCornerShape(18.dp),
+                            )
+                        }
+                    }
+                }
+            }
+        }
         item(key = "moods") {
             Row(
                 modifier = Modifier
