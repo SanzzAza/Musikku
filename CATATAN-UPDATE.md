@@ -1,4 +1,17 @@
-# Catatan update Musikku
+# Catatan Update VYORA
+
+## Rilis Utama VYORA v1.1 — Rebrand Penuh + Fitur Flagship (Mode Tamu)
+
+- **Identitas Baru VYORA (`com.vyora.music`)**: Logo berkilau VYORA, tema khas **Obsidian Royal Violet Liquid Glass** & **Editorial**, serta 3 keluarga font `.ttf` tertanam langsung (*Plus Jakarta Sans*, *Playfair Display*, *JetBrains Mono*).
+- **100% Mode Tamu (Tanpa Login Akun)**: Seluruh fitur bekerja tanpa perlu login akun Google/YouTube.
+- **Unduhan Offline & Auto-Cache Pintar**: Unduh lagu, sampul, dan lirik secara permanen ke perangkat agar bisa diputar tanpa sinyal/kuota, ditambah `SimpleCache` otomatis hingga 2 GB.
+- **Mode Lagu ⇄ Video Klip (MV)**: Saklar instan di layar Pemutar untuk menampilkan video klip langsung di bingkai kaca VYORA.
+- **Karaoke Per-Kata, Terjemahan ID & Romaji**: Lirik multi-sumber (*BetterLyrics TTML* → *LRCLIB* → *KuGou* + cache offline), lengkap dengan sorotan karaoke per-kata, terjemahan otomatis Bahasa Indonesia, dan romanisasi Korea/Jepang (*Romaji*).
+- **Studio Audio & Equalizer VYORA**: Preset *Slowed + Reverb*, *Deep Slowed*, *Nightcore*, kecepatan & *pitch* manual, Equalizer 5-band dengan profil *TWS Harman AutoEQ* & *VYORA Signature*, *Bass Boost*, *3D Spasial Virtualizer*, dan normalisasi volume.
+- **Statistik, Streak Harian & Kartu Story VYORA Recap**: Pantau menit dengar, *streak* harian, Top Lagu & Top Artis, serta ekspor kartu *Story* PNG `1080×1920` sekali ketuk.
+- **Widget Layar Utama Liquid Glass & Cek Pembaruan Otomatis**: Widget pemutar musik di *Home Screen* Android dan pemeriksa update rilis langsung dari GitHub Releases.
+
+---
 
 ## Perbaikan — impor Spotify & mode terang (v1.0.19)
 

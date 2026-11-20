@@ -5,16 +5,16 @@ plugins {
 }
 
 android {
-    namespace = "com.example.musikku"
+    namespace = "com.vyora.music"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.example.musikku"
+        applicationId = "com.vyora.music"
         minSdk = 24
         targetSdk = 35
         // Di GitHub Actions nilai ini diisi otomatis dari nomor build
         versionCode = System.getenv("VERSION_CODE")?.toIntOrNull() ?: 1
-        versionName = System.getenv("VERSION_NAME") ?: "1.0"
+        versionName = System.getenv("VERSION_NAME") ?: "1.1.0"
     }
 
     signingConfigs {
@@ -91,10 +91,12 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.6")
     implementation("androidx.navigation:navigation-compose:2.8.1")
 
-    // Pemutar musik (ExoPlayer + MediaSession untuk background & notifikasi)
+    // Pemutar musik (ExoPlayer + MediaSession + Cache Offline untuk background & notifikasi)
     // 1.9.4 = rilis stabil terbaru yang masih kompatibel dengan compileSdk 35
     implementation("androidx.media3:media3-exoplayer:1.9.4")
     implementation("androidx.media3:media3-session:1.9.4")
+    implementation("androidx.media3:media3-datasource:1.9.4")
+    implementation("androidx.media3:media3-database:1.9.4")
 
     // Network
     implementation("com.squareup.retrofit2:retrofit:2.11.0")

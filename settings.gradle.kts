@@ -13,5 +13,5 @@ dependencyResolutionManagement {
         maven("https://jitpack.io") // NewPipe Extractor
     }
 }
-rootProject.name = "Musikku"
+rootProject.name = "VYORA"
 include(":app")

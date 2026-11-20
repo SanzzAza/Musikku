@@ -1,78 +1,31 @@
-# 🎵 Musikku — Aplikasi Musik Android (Kotlin + Jetpack Compose)
+# VYORA
 
-Aplikasi streaming musik ala Spotify / YouTube Music — **lagu diputar full** (bukan preview).
+Pemutar musik Android **mode tamu (tanpa perlu login akun)** berbasis YouTube Music & musik lokal — dibalut desain **Obsidian Royal Violet Liquid Glass** & **Editorial**.
 
-## ✨ Fitur
-- **Katalog lengkap YouTube Music** — artis Indonesia & internasional (Last Child, Tulus, Dewa 19, dll)
-- **Beranda**: Trending di Indonesia, tangga lagu, artis teratas, rilisan baru, playlist pilihan
-- **Cari**: lagu, artis, album, dan playlist — dengan saran kata kunci saat mengetik & riwayat pencarian
-- **Halaman Artis** ala YT Music: lagu teratas, album, single & EP, video, playlist, artis serupa
-- **Album & Playlist**: daftar lagu lengkap, putar / acak
-- **Radio otomatis**: putar satu lagu → antrian diisi lagu serupa (seperti YT Music)
-- **Lagu full** (bukan preview), kualitas audio tertinggi yang tersedia
-- **Lirik tersinkron** ala Spotify (sumber: [LRCLIB](https://lrclib.net))
-- **Putar di background** + notifikasi media & kontrol lockscreen
-- **Koleksi**: lagu yang disukai dan playlist buatan sendiri tersimpan di perangkat
-- **Antrean**: lihat daftar lagu, putar lagu pilihan, pindahkan urutan, atau hapus lagu lain dari antrean. Saat acak aktif, urutan putar dapat berbeda dari urutan daftar.
-- **Sleep timer**: jeda musik setelah 15, 30, 45, atau 60 menit. Timer berjalan selama layanan pemutar aktif; timer dibatalkan jika layanan/proses dihentikan.
-- **Coba lagi**: ulangi pemutaran saat terjadi kesalahan
-- **Backup koleksi**: ekspor dan impor JSON favorit dan playlist; impor menggabungkan data berdasarkan ID, bukan menimpa koleksi.
-- **Lanjutkan pemutaran**: antrean dan posisi terakhir dipulihkan dalam keadaan jeda.
-- **Tambah ke antrean**: gunakan menu titik tiga lagu untuk menambahkan lagu atau memutarnya berikutnya (menonaktifkan mode acak).
+## Fitur Unggulan VYORA v1.1
 
-## 🧱 Tech Stack
-| Bagian | Library |
-|---|---|
-| UI | Jetpack Compose + Material 3 |
-| Arsitektur | MVVM (ViewModel + StateFlow) |
-| Navigasi | Navigation Compose |
-| Katalog musik | YouTube Music InnerTube API (`data/ytmusic/YTMusic.kt`) |
-| Audio stream | [NewPipe Extractor](https://github.com/TeamNewPipe/NewPipeExtractor) |
-| Player | AndroidX Media3 (ExoPlayer + MediaSessionService) |
-| Gambar | Coil |
-| Lirik | LRCLIB |
+- **100% Mode Tamu (Tanpa Login)** — Langsung cari, putar, unduh offline, dan nikmati radio tanpa perlu masuk akun Google/YouTube.
+- **Unduhan Offline & Auto-Cache Pintar** — Simpan lagu favorit agar bisa diputar kapan pun tanpa sinyal/kuota, ditambah `SimpleCache` otomatis hingga 2 GB.
+- **Mode Lagu ⇄ Video Klip (MV)** — Saklar instan di layar Pemutar untuk berpindah mulus antara sampul album dan video klip langsung di bingkai kaca VYORA.
+- **Karaoke Per-Kata, Terjemahan ID & Romaji** — Lirik multi-sumber (*BetterLyrics TTML* → *LRCLIB* → *KuGou* + cache offline), lengkap dengan sorotan karaoke per-kata, terjemahan otomatis Bahasa Indonesia, dan romanisasi Korea/Jepang (*Romaji*).
+- **Studio Audio & Equalizer VYORA** — Preset *Slowed + Reverb*, *Deep Slowed*, *Nightcore*, kecepatan & *pitch* manual, Equalizer 5-band dengan profil *TWS Harman AutoEQ* & *VYORA Signature*, *Bass Boost*, *3D Spasial Virtualizer*, dan normalisasi volume.
+- **Statistik, Streak Harian & Kartu Story VYORA Recap** — Pantau menit dengar, *streak* harian, Top Lagu, Top Artis, dan ekspor kartu *Story* PNG `1080×1920` sekali ketuk.
+- **Studio Poster Lagu & Lirik** — Buat kartu foto *Cutout AI* maupun poster lirik editorial siap bagikan ke Instagram/WhatsApp.
+- **Widget Layar Utama Liquid Glass** — Kontrol pemutaran langsung dari *Home Screen* HP.
+- **Impor Playlist Lintas Platform & Musik Lokal** — Impor playlist publik dari Spotify, Apple Music, atau YouTube Music, serta putar MP3/FLAC di perangkat.
+- **Cek Pembaruan Otomatis** — Periksa dan unduh rilis APK terbaru langsung dari menu *Pengaturan → Tentang*.
 
-## 📁 Struktur
-```
-app/src/main/java/com/example/musikku/
-├── AppModule.kt                 # Service locator
-├── data/
-│   ├── ytmusic/
-│   │   ├── YTMusic.kt           # Beranda, cari, artis, album/playlist, radio
-│   │   ├── InnerTubeParser.kt   # Parser respons YouTube Music
-│   │   ├── StreamResolver.kt    # URL audio full (NewPipe)
-│   │   └── Models.kt            # SongItem, ArtistItem, AlbumItem, Section
-│   ├── lyrics/LyricsRepository.kt
-│   └── local/FavoritesStore.kt
-├── player/                      # PlaybackService + PlayerViewModel
-└── ui/                          # home, search, artist, collection, library, player, lyrics
+## Build dari Source
+
+Prasyarat: **JDK 17** dan **Android SDK 35**.
+
+```bash
+./gradlew :app:assembleDebug :app:testDebugUnitTest
 ```
 
-## ▶️ Cara Menjalankan
-1. Buka folder `Musikku` di **Android Studio** (Koala / Ladybug atau lebih baru).
-2. Tunggu Gradle sync selesai (JDK 17).
-3. Jalankan di emulator / HP (Android 7.0+ / API 24).
+APK hasil build berada di `app/build/outputs/apk/debug/app-debug.apk`. Rilis bertanda tangan dipublikasikan otomatis lewat GitHub Actions pada setiap push ke branch `main`.
 
-## 🎧 Cara Kerja
-1. Semua data musik (beranda, pencarian, artis, album, playlist, radio) diambil langsung dari
-   **YouTube Music** lewat API internal yang sama dengan music.youtube.com — tanpa login / API key.
-2. Saat lagu diputar, `StreamResolver` mengambil URL audio kualitas tertinggi dari videoId lagu itu.
-3. Lagu berikutnya di antrian di-*prefetch* supaya perpindahan lagu mulus.
+## Privasi & Catatan
 
-## ⚠️ Catatan Penting
-- Mengambil audio dari YouTube melanggar ToS YouTube → aplikasi **tidak bisa masuk Play Store**;
-  distribusikan lewat GitHub Releases saja (sama seperti NewPipe / ViMusic / InnerTune).
-- Kalau suatu saat lagu tiba-tiba tidak bisa diputar, biasanya karena YouTube mengubah sesuatu →
-  update versi `NewPipeExtractor` di `app/build.gradle.kts` ke [rilis terbaru](https://github.com/TeamNewPipe/NewPipeExtractor/releases), lalu push.
-
-## 🚀 Build & Rilis Otomatis (GitHub Actions)
-Setiap **push ke branch `main`** (atau klik *Run workflow* di tab **Actions**) akan:
-1. Build APK release yang sudah ditandatangani
-2. Membuat **GitHub Release** baru `v1.0.<nomor build>` berisi file APK
-
-Download APK terbaru: **Releases → Latest**.
-
-Rilis otomatis akan gagal jika salah satu secret signing belum disiapkan, agar tidak menerbitkan APK dengan debug key yang berbeda. Gunakan keystore yang sama seperti rilis sebelumnya agar APK bisa di-update tanpa uninstall.
-
-Secrets yang dipakai (Settings → Secrets and variables → Actions):
-`KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`.
+- Semua data (lagu disukai, playlist, unduhan offline, statistik putar, cache lirik, pengaturan audio) disimpan **100% lokal di perangkat** dan dapat diekspor lewat menu Backup JSON di Pustaka.
+- Proyek independen; tidak berafiliasi dengan YouTube, Google, Spotify, atau Apple Music.

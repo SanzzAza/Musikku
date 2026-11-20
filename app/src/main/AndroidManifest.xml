@@ -3,6 +3,7 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
 
     <!-- Musik di perangkat: Android 13+ memakai READ_MEDIA_AUDIO, versi lama READ_EXTERNAL_STORAGE. -->
     <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
@@ -15,13 +16,13 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <application
-        android:name=".MusikkuApplication"
+        android:name=".VyoraApplication"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:label="@string/app_name"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Musikku">
+        android:theme="@style/Theme.Vyora">
 
         <activity
             android:name=".MainActivity"
@@ -42,6 +43,22 @@
                 <action android:name="androidx.media3.session.MediaSessionService" />
             </intent-filter>
         </service>
+
+        <!-- Home Screen Widget VYORA Liquid Glass -->
+        <receiver
+            android:name=".widget.VyoraMusicWidget"
+            android:exported="true"
+            android:label="@string/app_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="com.vyora.music.widget.PLAY_PAUSE" />
+                <action android:name="com.vyora.music.widget.NEXT" />
+                <action android:name="com.vyora.music.widget.PREV" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/vyora_widget_info" />
+        </receiver>
 
         <provider
             android:name="androidx.core.content.FileProvider"

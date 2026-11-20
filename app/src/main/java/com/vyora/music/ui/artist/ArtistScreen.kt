@@ -1,0 +1,176 @@
+package com.vyora.music.ui.artist
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
+import com.vyora.music.data.ytmusic.SongItem
+import com.vyora.music.data.ytmusic.YTItem
+import com.vyora.music.ui.components.ErrorBox
+import com.vyora.music.ui.components.LoadingBox
+import com.vyora.music.ui.components.PlayShuffleButtons
+import com.vyora.music.ui.components.SectionTitle
+import com.vyora.music.ui.components.SectionView
+import com.vyora.music.ui.components.SongRow
+import com.vyora.music.ui.components.isOpenableCollection
+import com.vyora.music.ui.theme.warmWash
+import com.vyora.music.ui.theme.LocalBottomOverlayPadding
+import com.vyora.music.ui.theme.WarmInk
+import com.vyora.music.ui.theme.WarmMuted
+
+@Composable
+fun ArtistScreen(
+    artistId: String,
+    currentSongId: String?,
+    onPlaySongs: (List<SongItem>, Int) -> Unit,
+    onShuffle: (List<SongItem>) -> Unit,
+    onOpenItem: (YTItem) -> Unit,
+    onOpenCollection: (String) -> Unit,
+    onBack: () -> Unit,
+    vm: ArtistViewModel = viewModel(),
+) {
+    LaunchedEffect(artistId) { vm.load(artistId) }
+    val state by vm.state.collectAsStateWithLifecycle()
+    val page = state.page
+    val bottomPadding = LocalBottomOverlayPadding.current
+    var descExpanded by rememberSaveable { mutableStateOf(false) }
+
+    Box(Modifier.fillMaxSize()) {
+        when {
+            state.loading && page == null -> LoadingBox()
+            state.error != null && page == null ->
+                ErrorBox(state.error!!, onRetry = { vm.load(artistId, force = true) })
+            page != null -> {
+                val top = page.topSongs
+                val topSongs = top?.items?.filterIsInstance<SongItem>().orEmpty()
+                LazyColumn(contentPadding = PaddingValues(bottom = bottomPadding + 20.dp)) {
+                    item {
+                        Box(Modifier.fillMaxWidth().height(340.dp)) {
+                            AsyncImage(
+                                model = page.thumbnail,
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize(),
+                            )
+                            Box(
+                                Modifier.fillMaxSize().background(
+                                    Brush.verticalGradient(
+                                        0f to Color.Black.copy(alpha = 0.35f),
+                                        0.48f to Color.Transparent,
+                                        1f to MaterialTheme.colorScheme.background,
+                                    )
+                                )
+                            )
+                            Text(
+                                page.name,
+                                style = MaterialTheme.typography.headlineLarge,
+                                color = WarmInk,
+                                modifier = Modifier.align(Alignment.BottomStart).padding(18.dp),
+                            )
+                        }
+                    }
+                    page.subscribers?.let { subs ->
+                        item {
+                            Text(
+                                "$subs subscriber",
+                                color = WarmMuted,
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.padding(horizontal = 18.dp),
+                            )
+                        }
+                    }
+                    if (topSongs.isNotEmpty()) {
+                        item {
+                            PlayShuffleButtons(
+                                onPlay = { onPlaySongs(topSongs, 0) },
+                                onShuffle = { onShuffle(topSongs) },
+                                modifier = Modifier.padding(top = 12.dp),
+                            )
+                        }
+                        item {
+                            val more = top?.moreBrowseId?.takeIf { isOpenableCollection(it) }
+                            SectionTitle(
+                                top?.title?.ifBlank { null } ?: "Lagu teratas",
+                                action = if (more != null) "Lihat semua" else null,
+                                onAction = more?.let { id -> { onOpenCollection(id) } },
+                            )
+                        }
+                        itemsIndexed(topSongs, key = { i, s -> "top-$i-${s.id}" }) { i, song ->
+                            SongRow(
+                                song = song,
+                                index = i + 1,
+                                isCurrent = song.id == currentSongId,
+                                onClick = { onPlaySongs(topSongs, i) },
+                            )
+                        }
+                    }
+                    val others = page.sections.filter { it !== top }
+                    itemsIndexed(others, key = { i, s -> "sec-$i-${s.title}" }) { _, section ->
+                        SectionView(section, currentSongId, onPlaySongs, onOpenItem, onOpenCollection)
+                    }
+                    page.description?.let { desc ->
+                        item { SectionTitle("Tentang") }
+                        item {
+                            Text(
+                                desc,
+                                maxLines = if (descExpanded) Int.MAX_VALUE else 4,
+                                overflow = TextOverflow.Ellipsis,
+                                color = WarmMuted,
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier
+                                    .padding(horizontal = 18.dp)
+                                    .clickable { descExpanded = !descExpanded },
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        BackButton(onBack, Modifier.statusBarsPadding().padding(10.dp))
+    }
+}
+
+@Composable
+fun BackButton(onBack: () -> Unit, modifier: Modifier = Modifier) {
+    IconButton(
+        onClick = onBack,
+        modifier = modifier
+            .clip(CircleShape)
+            .background(Color(0x99161311))
+            .border(1.dp, warmWash(0.20f), CircleShape),
+    ) {
+        Icon(Icons.AutoMirrored.Rounded.ArrowBack, "Kembali", tint = WarmInk)
+    }
+}

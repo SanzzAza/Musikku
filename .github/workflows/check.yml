@@ -27,15 +27,12 @@ jobs:
       - name: Simpan APK debug untuk pengujian
         uses: actions/upload-artifact@v4
         with:
-          name: Musikku-debug
+          name: VYORA-debug
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
           retention-days: 7
 
   build-release-r8:
-    # Menjalankan R8/minify di branch, supaya masalah keep-rule ketahuan
-    # SEBELUM push ke main. Tanpa keystore, build.gradle.kts otomatis
-    # memakai debug key, jadi job ini tidak butuh secret.
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -51,7 +48,7 @@ jobs:
       - name: Simpan APK release hasil R8
         uses: actions/upload-artifact@v4
         with:
-          name: Musikku-release-r8
+          name: VYORA-release-r8
           path: app/build/outputs/apk/release/*.apk
           if-no-files-found: error
           retention-days: 7

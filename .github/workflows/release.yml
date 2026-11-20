@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       VERSION_CODE: ${{ github.run_number }}
-      VERSION_NAME: 1.0.${{ github.run_number }}
+      VERSION_NAME: 1.1.${{ github.run_number }}
 
     steps:
       - name: Checkout
@@ -56,25 +56,34 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleRelease --no-daemon --stacktrace
           mkdir -p dist
-          cp app/build/outputs/apk/release/app-release.apk "dist/Musikku-v${VERSION_NAME}.apk"
+          cp app/build/outputs/apk/release/app-release.apk "dist/VYORA-v${VERSION_NAME}.apk"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Musikku-v${{ env.VERSION_NAME }}
+          name: VYORA-v${{ env.VERSION_NAME }}
           path: dist/*.apk
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ env.VERSION_NAME }}
-          name: Musikku v${{ env.VERSION_NAME }}
+          name: VYORA v${{ env.VERSION_NAME }}
           target_commitish: ${{ github.sha }}
           generate_release_notes: true
           make_latest: true
           files: dist/*.apk
           body: |
-            📱 **Musikku v${{ env.VERSION_NAME }}**
+            📱 **VYORA v${{ env.VERSION_NAME }}** — *Royal Violet Liquid Glass Edition (Mode Tamu)*
+
+            ✨ **Fitur Unggulan:**
+            - **Tanpa Login Akun (100% Guest Mode)**
+            - **Unduhan Offline & Auto-Cache Pintar (hingga 2 GB)**
+            - **Saklar Lagu ⇄ Video Klip (MV) di Pemutar**
+            - **Lirik Karaoke Per-Kata + Terjemahan Bahasa Indonesia + Romaji (Korea/Jepang)**
+            - **Studio Audio VYORA (Slowed + Reverb, Nightcore, Equalizer 5-Band AutoEQ, Bass Boost, 3D Spasial)**
+            - **Statistik, Streak Harian & Kartu Story VYORA Recap (PNG)**
+            - **Widget Layar Utama Liquid Glass & Studio Poster Cutout AI**
 
             Download file `.apk` di bawah lalu install di Android 7.0+.
             Commit: ${{ github.sha }}

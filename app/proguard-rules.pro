@@ -1,5 +1,5 @@
 # ---------------------------------------------------------------------------
-# Musikku — keep rules untuk R8 (Fase 1)
+# VYORA — keep rules untuk R8
 # ---------------------------------------------------------------------------
 
 # Atribut yang dibutuhkan Gson untuk membaca signature generik (TypeToken)
@@ -17,14 +17,17 @@
 # Kelas model yang diserialisasi/dideserialisasi Gson.
 # Kalau nama field diobfuscate, data pengguna (favorit, playlist, snapshot
 # pemutaran, backup JSON) akan hilang tanpa error — jadi harus di-keep.
--keep class com.example.musikku.data.ytmusic.** { *; }
--keep class com.example.musikku.data.local.** { *; }
--keep class com.example.musikku.player.PlaybackSnapshot$Snapshot { *; }
--keepclassmembers class com.example.musikku.player.PlaybackSnapshot$Snapshot { <fields>; }
+-keep class com.vyora.music.data.ytmusic.** { *; }
+-keep class com.vyora.music.data.local.** { *; }
+-keep class com.vyora.music.data.offline.** { *; }
+-keep class com.vyora.music.data.lyrics.** { *; }
+-keep class com.vyora.music.data.updater.** { *; }
+-keep class com.vyora.music.player.PlaybackSnapshot$Snapshot { *; }
+-keepclassmembers class com.vyora.music.player.PlaybackSnapshot$Snapshot { <fields>; }
 
 # Enum disimpan sebagai String di SharedPreferences (UiStyle, AppFontStyle),
 # jadi nama konstantanya tidak boleh berubah.
--keepclassmembers enum com.example.musikku.data.local.** {
+-keepclassmembers enum com.vyora.music.data.local.** {
     public static **[] values();
     public static ** valueOf(java.lang.String);
 }

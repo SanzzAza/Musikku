@@ -1,6 +1,5 @@
 <resources>
-    <color name="background">#FF0E0D0C</color>
-    <color name="accent">#FFE06D47</color>
-    <!-- Latar adaptive icon: terakota yang sama dengan aksen aplikasi -->
-    <color name="ic_launcher_background">#FFE06D47</color>
+    <color name="background">#FF0D0B14</color>
+    <color name="accent">#FF9D6BFF</color>
+    <color name="ic_launcher_background">#FF110D1B</color>
 </resources>
