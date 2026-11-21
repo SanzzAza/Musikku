@@ -142,6 +142,16 @@ class PlaybackService : MediaSessionService() {
                     snapshot.save(player)
                     syncHomeWidget(player)
                 }
+                if (events.containsAny(
+                        Player.EVENT_MEDIA_ITEM_TRANSITION,
+                        Player.EVENT_IS_PLAYING_CHANGED,
+                        Player.EVENT_PLAYBACK_STATE_CHANGED,
+                        Player.EVENT_POSITION_DISCONTINUITY,
+                        Player.EVENT_PLAYBACK_PARAMETERS_CHANGED,
+                    )
+                ) {
+                    syncDiscordPresence(player)
+                }
             }
 
             override fun onMediaItemTransition(mediaItem: MediaItem?, reason: Int) {
@@ -177,6 +187,26 @@ class PlaybackService : MediaSessionService() {
                 audioFxController?.apply(fxPrefs)
             }
         }
+        serviceScope.launch {
+            AppModule.discordPrefs.state.collect {
+                syncDiscordPresence(exoPlayer)
+            }
+        }
+    }
+
+    private fun syncDiscordPresence(player: Player) {
+        val song = player.currentMediaItem?.toSong()
+        val isPlaying = player.isPlaying
+        val pos = player.currentPosition.coerceAtLeast(0L)
+        val dur = player.duration.takeIf { it != C.TIME_UNSET && it > 0L } ?: 0L
+        val speed = player.playbackParameters.speed
+        AppModule.discordRpc.updateNowPlaying(
+            song = song,
+            isPlaying = isPlaying,
+            positionMs = pos,
+            durationMs = dur,
+            playbackSpeed = speed,
+        )
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -362,6 +392,7 @@ class PlaybackService : MediaSessionService() {
     override fun onDestroy() {
         snapshotHandler.removeCallbacks(saveTick)
         SleepTimer.detach()
+        AppModule.discordRpc.clearPresence()
         audioFxController?.release()
         audioFxController = null
         mediaSession?.run {

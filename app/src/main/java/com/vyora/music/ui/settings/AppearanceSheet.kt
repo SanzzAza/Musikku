@@ -32,6 +32,7 @@ import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material.icons.rounded.DataSaverOn
 import androidx.compose.material.icons.rounded.Equalizer
 import androidx.compose.material.icons.rounded.FastForward
+import androidx.compose.material.icons.rounded.Headphones
 import androidx.compose.material.icons.rounded.Palette
 import androidx.compose.material.icons.rounded.Storage
 import androidx.compose.material.icons.rounded.SystemUpdate
@@ -68,6 +69,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vyora.music.AppModule
 import com.vyora.music.R
 import com.vyora.music.data.local.AppFontStyle
@@ -102,9 +104,11 @@ fun AppearanceSheet(
     prefs: UiPreferences,
     onDismiss: () -> Unit,
     onOpenAudioFx: () -> Unit = {},
+    onOpenDiscord: () -> Unit = {},
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     val accent = MaterialTheme.colorScheme.primary
+    val discordPrefs by AppModule.discordPrefs.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val appVersion = remember(context) {
@@ -350,6 +354,42 @@ fun AppearanceSheet(
                             text = "Slowed + Reverb, Nightcore, AutoEQ TWS, Bass Boost & Pitch",
                             style = MaterialTheme.typography.bodySmall,
                             color = WarmMuted,
+                        )
+                    }
+                }
+
+                SectionDivider()
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(onClick = onOpenDiscord)
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        Icons.Rounded.Headphones,
+                        null,
+                        tint = Color(0xFF5865F2),
+                        modifier = Modifier.size(22.dp),
+                    )
+                    Spacer(Modifier.width(12.dp))
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            text = "Discord Rich Presence",
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.SemiBold,
+                            color = WarmInk,
+                        )
+                        Text(
+                            text = if (discordPrefs.isLoggedIn) {
+                                val handle = discordPrefs.username.takeIf { it.isNotBlank() }?.let { "@$it • " }.orEmpty()
+                                "${handle}${if (discordPrefs.enabled) discordPrefs.listeningMode.label else "Nonaktif"}"
+                            } else {
+                                "Tampilkan \"Listening to VYORA\", sampul & durasi jalan di profil Discord"
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (discordPrefs.isActive) accent else WarmMuted,
                         )
                     }
                 }

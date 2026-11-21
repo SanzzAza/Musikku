@@ -26,6 +26,7 @@ import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.rounded.Add
 import androidx.compose.material.icons.rounded.DownloadForOffline
 import androidx.compose.material.icons.rounded.Favorite
+import androidx.compose.material.icons.rounded.Headphones
 import androidx.compose.material.icons.rounded.Insights
 import androidx.compose.material.icons.rounded.Link
 import androidx.compose.material.icons.rounded.Smartphone
@@ -75,12 +76,14 @@ fun LibraryScreen(
     onOpenPlaylist: (String) -> Unit,
     onOpenSettings: () -> Unit,
     onOpenStats: () -> Unit = {},
+    onOpenDiscord: () -> Unit = {},
     onPlaySongs: (List<SongItem>, Int) -> Unit,
     onShuffle: (List<SongItem>) -> Unit,
 ) {
     val liked by AppModule.favorites.items.collectAsStateWithLifecycle()
     val playlists by AppModule.playlists.items.collectAsStateWithLifecycle()
     val downloaded by AppModule.downloads.items.collectAsStateWithLifecycle()
+    val discordPrefs by AppModule.discordPrefs.state.collectAsStateWithLifecycle()
     val statsRaw by AppModule.stats.data.collectAsStateWithLifecycle()
     val statsSummary = remember(statsRaw) { AppModule.stats.summarize(StatsPeriod.ALL_TIME) }
     val palette = LocalCoverPalette.current
@@ -225,6 +228,36 @@ fun LibraryScreen(
                                 Icons.Rounded.Insights,
                                 null,
                                 tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(26.dp),
+                            )
+                        }
+                    }
+                }
+                item(key = "discord-rpc") {
+                    val sub = if (discordPrefs.isLoggedIn) {
+                        val who = discordPrefs.username.takeIf { it.isNotBlank() }?.let { "@$it • " }.orEmpty()
+                        "${who}${if (discordPrefs.enabled) "Aktif (${discordPrefs.listeningMode.label})" else "Nonaktif"}"
+                    } else {
+                        "Tampilkan \"Listening to VYORA\" + sampul & bar durasi di Discord"
+                    }
+                    LibraryCardRow(
+                        title = "Status Listening Discord",
+                        subtitle = sub,
+                        shape = cardShape,
+                        onClick = onOpenDiscord,
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(58.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(Color(0xFF5865F2).copy(alpha = 0.20f))
+                                .border(1.dp, Color(0xFF5865F2).copy(alpha = 0.45f), RoundedCornerShape(12.dp)),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                Icons.Rounded.Headphones,
+                                null,
+                                tint = Color(0xFF5865F2),
                                 modifier = Modifier.size(26.dp),
                             )
                         }

@@ -5,6 +5,7 @@ Pemutar musik Android **mode tamu (tanpa perlu login akun)** berbasis YouTube Mu
 ## Fitur Unggulan VYORA v1.1
 
 - **100% Mode Tamu (Tanpa Login)** — Langsung cari, putar, unduh offline, dan nikmati radio tanpa perlu masuk akun Google/YouTube.
+- **Discord Rich Presence Bawaan ("Listening to VYORA")** — Tampilkan kartu *Listening to VYORA* lengkap dengan sampul lagu, judul, artis, dan *progress bar* durasi berjalan *real-time* langsung di profil Discord tanpa aplikasi tambahan.
 - **Unduhan Offline & Auto-Cache Pintar** — Simpan lagu favorit agar bisa diputar kapan pun tanpa sinyal/kuota, ditambah `SimpleCache` otomatis hingga 2 GB.
 - **Mode Lagu ⇄ Video Klip (MV)** — Saklar instan di layar Pemutar untuk berpindah mulus antara sampul album dan video klip langsung di bingkai kaca VYORA.
 - **Karaoke Per-Kata, Terjemahan ID & Romaji** — Lirik multi-sumber (*BetterLyrics TTML* → *LRCLIB* → *KuGou* + cache offline), lengkap dengan sorotan karaoke per-kata, terjemahan otomatis Bahasa Indonesia, dan romanisasi Korea/Jepang (*Romaji*).

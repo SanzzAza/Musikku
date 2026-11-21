@@ -1,6 +1,8 @@
 package com.vyora.music
 
 import android.content.Context
+import com.vyora.music.data.discord.DiscordPreferencesStore
+import com.vyora.music.data.discord.DiscordRpcClient
 import com.vyora.music.data.importer.PlaylistImporter
 import com.vyora.music.data.local.AudioFxPreferencesStore
 import com.vyora.music.data.local.FavoritesStore
@@ -59,6 +61,12 @@ object AppModule {
     lateinit var lyrics: LyricsRepository
         private set
 
+    lateinit var discordPrefs: DiscordPreferencesStore
+        private set
+
+    lateinit var discordRpc: DiscordRpcClient
+        private set
+
     fun init(context: Context) {
         val app = context.applicationContext
         favorites = FavoritesStore(app)
@@ -74,6 +82,8 @@ object AppModule {
         lyricsCache = LyricsCacheStore(app)
         lyricsTranslator = LyricsTranslator(app)
         lyrics = LyricsRepository(lyricsCache)
+        discordPrefs = DiscordPreferencesStore(app)
+        discordRpc = DiscordRpcClient(discordPrefs)
     }
 
     /** Katalog musik: YouTube Music Guest API (cari, beranda, artis, album, playlist, radio). */

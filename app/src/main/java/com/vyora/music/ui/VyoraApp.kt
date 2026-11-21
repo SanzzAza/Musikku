@@ -60,6 +60,7 @@ import com.vyora.music.ui.components.FloatingBottomChrome
 import com.vyora.music.ui.components.LocalQueueActions
 import com.vyora.music.ui.components.NavTab
 import com.vyora.music.ui.components.QueueActions
+import com.vyora.music.ui.discord.DiscordSettingsSheet
 import com.vyora.music.ui.home.HistorySheet
 import com.vyora.music.ui.home.HomeScreen
 import com.vyora.music.ui.library.LibraryScreen
@@ -122,6 +123,7 @@ fun VyoraApp(playerVm: PlayerViewModel = viewModel()) {
     var showHistory by rememberSaveable { mutableStateOf(false) }
     var showStats by rememberSaveable { mutableStateOf(false) }
     var showAudioFx by rememberSaveable { mutableStateOf(false) }
+    var showDiscord by rememberSaveable { mutableStateOf(false) }
     var navCollapsed by rememberSaveable { mutableStateOf(false) }
 
     // Kembalikan navbar ke bentuk penuh saat berpindah layar
@@ -252,6 +254,7 @@ fun VyoraApp(playerVm: PlayerViewModel = viewModel()) {
                                 onOpenPlaylist = { nav.navigate(Routes.playlist(it)) },
                                 onOpenSettings = { showSettings = true },
                                 onOpenStats = { showStats = true },
+                                onOpenDiscord = { showDiscord = true },
                                 onPlaySongs = play,
                                 onShuffle = shuffle,
                             )
@@ -365,6 +368,16 @@ fun VyoraApp(playerVm: PlayerViewModel = viewModel()) {
                         showSettings = false
                         showAudioFx = true
                     },
+                    onOpenDiscord = {
+                        showSettings = false
+                        showDiscord = true
+                    },
+                )
+            }
+            if (showDiscord) {
+                DiscordSettingsSheet(
+                    now = now,
+                    onDismiss = { showDiscord = false },
                 )
             }
             if (showAudioFx) {

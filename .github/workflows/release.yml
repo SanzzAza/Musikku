@@ -77,7 +77,8 @@ jobs:
             📱 **VYORA v${{ env.VERSION_NAME }}** — *Royal Violet Liquid Glass Edition (Mode Tamu)*
 
             ✨ **Fitur Unggulan:**
-            - **Tanpa Login Akun (100% Guest Mode)**
+            - **Tanpa Login Akun YouTube (100% Guest Mode)**
+            - **Discord Rich Presence Bawaan ("Listening to VYORA" + Sampul + Bar Durasi Real-Time)**
             - **Unduhan Offline & Auto-Cache Pintar (hingga 2 GB)**
             - **Saklar Lagu ⇄ Video Klip (MV) di Pemutar**
             - **Lirik Karaoke Per-Kata + Terjemahan Bahasa Indonesia + Romaji (Korea/Jepang)**

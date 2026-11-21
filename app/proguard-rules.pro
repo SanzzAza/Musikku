@@ -22,6 +22,11 @@
 -keep class com.vyora.music.data.offline.** { *; }
 -keep class com.vyora.music.data.lyrics.** { *; }
 -keep class com.vyora.music.data.updater.** { *; }
+-keep class com.vyora.music.data.discord.** { *; }
+-keep class com.vyora.music.ui.discord.DiscordJsBridge { *; }
+-keepclassmembers class * {
+    @android.webkit.JavascriptInterface <methods>;
+}
 -keep class com.vyora.music.player.PlaybackSnapshot$Snapshot { *; }
 -keepclassmembers class com.vyora.music.player.PlaybackSnapshot$Snapshot { <fields>; }
 

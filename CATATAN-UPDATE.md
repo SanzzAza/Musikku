@@ -3,7 +3,8 @@
 ## Rilis Utama VYORA v1.1 — Rebrand Penuh + Fitur Flagship (Mode Tamu)
 
 - **Identitas Baru VYORA (`com.vyora.music`)**: Logo berkilau VYORA, tema khas **Obsidian Royal Violet Liquid Glass** & **Editorial**, serta 3 keluarga font `.ttf` tertanam langsung (*Plus Jakarta Sans*, *Playfair Display*, *JetBrains Mono*).
-- **100% Mode Tamu (Tanpa Login Akun)**: Seluruh fitur bekerja tanpa perlu login akun Google/YouTube.
+- **100% Mode Tamu (Tanpa Login Akun)**: Seluruh fitur musik bekerja tanpa perlu login akun Google/YouTube.
+- **Discord Rich Presence Bawaan ("Listening to VYORA")**: Menampilkan kartu *Listening to VYORA* (atau *Listening to [Artis]* / *YouTube Music*) lengkap dengan sampul album, judul lagu, artis, dan garis durasi berjalan *real-time* di profil Discord.
 - **Unduhan Offline & Auto-Cache Pintar**: Unduh lagu, sampul, dan lirik secara permanen ke perangkat agar bisa diputar tanpa sinyal/kuota, ditambah `SimpleCache` otomatis hingga 2 GB.
 - **Mode Lagu ⇄ Video Klip (MV)**: Saklar instan di layar Pemutar untuk menampilkan video klip langsung di bingkai kaca VYORA.
 - **Karaoke Per-Kata, Terjemahan ID & Romaji**: Lirik multi-sumber (*BetterLyrics TTML* → *LRCLIB* → *KuGou* + cache offline), lengkap dengan sorotan karaoke per-kata, terjemahan otomatis Bahasa Indonesia, dan romanisasi Korea/Jepang (*Romaji*).
