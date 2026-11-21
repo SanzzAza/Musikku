@@ -15,6 +15,7 @@ data class DiscordRpcPreferences(
     val token: String = "",
     val enabled: Boolean = true,
     val listeningMode: DiscordListeningMode = DiscordListeningMode.VYORA,
+    val showVyoraBadge: Boolean = true,
     val showListenButton: Boolean = true,
     val username: String = "",
     val displayName: String = "",
@@ -51,6 +52,7 @@ class DiscordPreferencesStore(context: Context) {
             token = prefs.getString(KEY_TOKEN, "")?.trim().orEmpty(),
             enabled = prefs.getBoolean(KEY_ENABLED, true),
             listeningMode = mode,
+            showVyoraBadge = prefs.getBoolean(KEY_SHOW_VYORA_BADGE, true),
             showListenButton = prefs.getBoolean(KEY_SHOW_BUTTON, true),
             username = prefs.getString(KEY_USERNAME, "").orEmpty(),
             displayName = prefs.getString(KEY_DISPLAY_NAME, "").orEmpty(),
@@ -91,6 +93,11 @@ class DiscordPreferencesStore(context: Context) {
         _state.value = _state.value.copy(listeningMode = mode)
     }
 
+    fun setShowVyoraBadge(show: Boolean) {
+        prefs.edit().putBoolean(KEY_SHOW_VYORA_BADGE, show).apply()
+        _state.value = _state.value.copy(showVyoraBadge = show)
+    }
+
     fun setShowListenButton(show: Boolean) {
         prefs.edit().putBoolean(KEY_SHOW_BUTTON, show).apply()
         _state.value = _state.value.copy(showListenButton = show)
@@ -115,6 +122,7 @@ class DiscordPreferencesStore(context: Context) {
         private const val KEY_TOKEN = "discord_token"
         private const val KEY_ENABLED = "discord_enabled"
         private const val KEY_MODE = "discord_listening_mode"
+        private const val KEY_SHOW_VYORA_BADGE = "discord_show_vyora_badge"
         private const val KEY_SHOW_BUTTON = "discord_show_button"
         private const val KEY_USERNAME = "discord_username"
         private const val KEY_DISPLAY_NAME = "discord_display_name"

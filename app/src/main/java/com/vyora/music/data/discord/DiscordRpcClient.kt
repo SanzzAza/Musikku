@@ -155,36 +155,67 @@ class DiscordRpcClient(
         }
 
         val seq = activitySeq.incrementAndGet()
+        val startCallRealMs = System.currentTimeMillis()
         ensureConnected(prefs.token)
 
-        val rawImageUrl = resolveBestArtworkUrl(song)
-        val cachedAsset = rawImageUrl?.let { artworkCache[it] }
+        val rawLargeUrl = resolveBestArtworkUrl(song)
+        val cachedLarge = artworkCache[rawLargeUrl]
+        val rawSmallUrl = if (prefs.showVyoraBadge) VYORA_BADGE_URL else null
+        val cachedSmall = rawSmallUrl?.let { artworkCache[it] }
 
-        // Fase 1: Kirim langsung status Listening (pakai mp:external dari cache jika sudah ada)
+        // Fase 1: Kirim langsung status Listening (pakai mp:external dari cache jika sudah siap)
         val initialPayload = buildListeningPresenceJson(
             song = song,
             prefs = prefs,
             positionMs = positionMs,
             durationMs = durationMs,
             playbackSpeed = playbackSpeed,
-            resolvedLargeImage = cachedAsset,
+            resolvedLargeImage = cachedLarge,
+            resolvedSmallImage = if (cachedLarge != null) cachedSmall else null,
+            nowEpochMs = startCallRealMs,
         )
         sendPresencePayload(initialPayload)
 
-        // Fase 2: Jika sampul belum ada di cache, upload ke /external-assets lalu perbarui kartu
-        if (rawImageUrl != null && cachedAsset == null) {
+        // Fase 2: Jika sampul album atau badge logo VYORA belum ada di cache,
+        // upload ke /external-assets lalu perbarui kartu lengkap dengan logo VYORA!
+        val needsLargeUpload = cachedLarge == null
+        val needsSmallUpload = rawSmallUrl != null && cachedSmall == null
+        if (needsLargeUpload || needsSmallUpload) {
             assetJob?.cancel()
             assetJob = scope.launch {
-                val uploaded = uploadExternalAsset(prefs.token, rawImageUrl)
-                if (uploaded != null && seq == activitySeq.get() && prefsStore.state.value.isActive) {
-                    artworkCache[rawImageUrl] = uploaded
+                val finalLarge = cachedLarge ?: uploadWithLogoFallback(prefs.token, rawLargeUrl)?.also {
+                    artworkCache[rawLargeUrl] = it
+                }
+                val finalSmall = if (rawSmallUrl == null) {
+                    null
+                } else {
+                    cachedSmall ?: uploadWithLogoFallback(prefs.token, rawSmallUrl)?.also {
+                        artworkCache[rawSmallUrl] = it
+                    }
+                }
+
+                if ((finalLarge != null || finalSmall != null) &&
+                    seq == activitySeq.get() &&
+                    prefsStore.state.value.isActive
+                ) {
+                    val nowRealMs = System.currentTimeMillis()
+                    val elapsedTrackMs = ((nowRealMs - startCallRealMs) * playbackSpeed.coerceIn(0.25f, 4.0f))
+                        .toLong()
+                        .coerceAtLeast(0L)
+                    val adjustedPosMs = if (durationMs > 0L) {
+                        (positionMs + elapsedTrackMs).coerceAtMost(durationMs)
+                    } else {
+                        positionMs + elapsedTrackMs
+                    }
                     val updatedPayload = buildListeningPresenceJson(
                         song = song,
-                        prefs = prefs,
-                        positionMs = positionMs,
+                        prefs = prefsStore.state.value,
+                        positionMs = adjustedPosMs,
                         durationMs = durationMs,
                         playbackSpeed = playbackSpeed,
-                        resolvedLargeImage = uploaded,
+                        resolvedLargeImage = finalLarge,
+                        resolvedSmallImage = finalSmall,
+                        nowEpochMs = nowRealMs,
                     )
                     sendPresencePayload(updatedPayload)
                 }
@@ -495,6 +526,15 @@ class DiscordRpcClient(
         }
     }
 
+    private suspend fun uploadWithLogoFallback(token: String, imageUrl: String): String? {
+        val primary = uploadExternalAsset(token, imageUrl)
+        if (primary != null) return primary
+        if (imageUrl == VYORA_BADGE_URL || imageUrl == VYORA_COVER_FALLBACK_URL) {
+            return uploadExternalAsset(token, VYORA_LEGACY_LOGO_URL)
+        }
+        return null
+    }
+
     private suspend fun uploadExternalAsset(token: String, imageUrl: String): String? {
         if (imageUrl.startsWith("mp:")) return imageUrl
         if (!imageUrl.startsWith("http")) return null
@@ -548,7 +588,18 @@ class DiscordRpcClient(
 
         private const val ACTIVITY_TYPE_LISTENING = 2
 
-        internal fun resolveBestArtworkUrl(song: SongItem): String? {
+        /** Badge bundar logo VYORA untuk pojok kanan bawah sampul (`assets.small_image`). */
+        internal const val VYORA_BADGE_URL =
+            "https://raw.githubusercontent.com/SanzzAza/Musikku/main/assets/discord/vyora_badge.png?v=1"
+
+        /** Sampul cadangan logo VYORA untuk lagu lokal MP3/FLAC yang tidak punya URL sampul online. */
+        internal const val VYORA_COVER_FALLBACK_URL =
+            "https://raw.githubusercontent.com/SanzzAza/Musikku/main/assets/discord/vyora_cover_fallback.png?v=1"
+
+        private const val VYORA_LEGACY_LOGO_URL =
+            "https://raw.githubusercontent.com/SanzzAza/Musikku/main/app/src/main/res/drawable-nodpi/vyora_logo.png"
+
+        internal fun resolveBestArtworkUrl(song: SongItem): String {
             val thumb = song.thumbnail?.trim()
             if (!thumb.isNullOrBlank() && (thumb.startsWith("https://") || thumb.startsWith("http://"))) {
                 return thumb
@@ -556,13 +607,14 @@ class DiscordRpcClient(
             if (song.localUri == null && song.id.isNotBlank()) {
                 return "https://i.ytimg.com/vi/${song.id}/hqdefault.jpg"
             }
-            return null
+            return VYORA_COVER_FALLBACK_URL
         }
 
         /**
          * Murni Kotlin (mudah diuji di unit test):
          * menyusun payload `d` untuk `OP_PRESENCE_UPDATE` tipe `LISTENING` (2) lengkap dengan
-         * start/end timestamps agar bar durasi `02:55 ━━━── 03:40` berjalan mulus di profil Discord.
+         * sampul lagu (`large_image`), badge logo VYORA (`small_image`), dan start/end timestamps
+         * agar bar durasi `02:55 ━━━── 03:40` berjalan mulus di profil Discord.
          */
         internal fun buildListeningPresenceJson(
             song: SongItem,
@@ -571,6 +623,7 @@ class DiscordRpcClient(
             durationMs: Long,
             playbackSpeed: Float = 1f,
             resolvedLargeImage: String? = null,
+            resolvedSmallImage: String? = null,
             nowEpochMs: Long = System.currentTimeMillis(),
         ): JsonObject {
             val activityName = when (prefs.listeningMode) {
@@ -605,12 +658,20 @@ class DiscordRpcClient(
                 add("timestamps", timestamps)
 
                 val albumLabel = song.album?.name?.takeIf { it.isNotBlank() } ?: "VYORA Music"
-                if (!resolvedLargeImage.isNullOrBlank()) {
+                val hasLarge = !resolvedLargeImage.isNullOrBlank()
+                val showSmall = prefs.showVyoraBadge && !resolvedSmallImage.isNullOrBlank()
+                if (hasLarge || showSmall) {
                     add(
                         "assets",
                         JsonObject().apply {
-                            addProperty("large_image", resolvedLargeImage)
-                            addProperty("large_text", albumLabel.take(128))
+                            if (hasLarge) {
+                                addProperty("large_image", resolvedLargeImage)
+                                addProperty("large_text", albumLabel.take(128))
+                            }
+                            if (showSmall) {
+                                addProperty("small_image", resolvedSmallImage)
+                                addProperty("small_text", "VYORA Music")
+                            }
                         },
                     )
                 }

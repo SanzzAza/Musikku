@@ -11,6 +11,7 @@ import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -66,7 +67,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextOverflow
@@ -77,6 +80,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.vyora.music.AppModule
+import com.vyora.music.R
 import com.vyora.music.data.discord.DiscordConnectionStatus
 import com.vyora.music.data.discord.DiscordListeningMode
 import com.vyora.music.player.NowPlaying
@@ -205,6 +209,7 @@ fun DiscordSettingsSheet(
             DiscordProfilePreviewCard(
                 now = now,
                 listeningMode = prefs.listeningMode,
+                showVyoraBadge = prefs.showVyoraBadge,
             )
 
             Spacer(Modifier.height(16.dp))
@@ -424,6 +429,48 @@ fun DiscordSettingsSheet(
 
             Spacer(Modifier.height(14.dp))
 
+            // Opsi Badge Logo VYORA di Sampul Album
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(WarmSurfaceElevated)
+                    .border(1.dp, WarmHairline, RoundedCornerShape(16.dp))
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        text = "Badge Logo VYORA di Sampul",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = WarmInk,
+                    )
+                    Text(
+                        text = "Tampilkan lencana bundar logo VYORA di pojok kanan bawah sampul album",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = WarmMuted,
+                    )
+                }
+                Spacer(Modifier.width(8.dp))
+                LiquidGlassSwitch(
+                    checked = prefs.showVyoraBadge,
+                    onCheckedChange = { show ->
+                        AppModule.discordPrefs.setShowVyoraBadge(show)
+                        if (prefs.isActive && now.song != null && now.isPlaying) {
+                            AppModule.discordRpc.updateNowPlaying(
+                                song = now.song,
+                                isPlaying = true,
+                                positionMs = now.positionMs,
+                                durationMs = now.durationMs,
+                            )
+                        }
+                    },
+                )
+            }
+
+            Spacer(Modifier.height(10.dp))
+
             // Opsi Tombol Dengarkan Lagu
             Row(
                 modifier = Modifier
@@ -481,6 +528,7 @@ fun DiscordSettingsSheet(
 private fun DiscordProfilePreviewCard(
     now: NowPlaying,
     listeningMode: DiscordListeningMode,
+    showVyoraBadge: Boolean,
 ) {
     val song = now.song
     val headerLabel = when (listeningMode) {
@@ -521,12 +569,28 @@ private fun DiscordProfilePreviewCard(
         }
         Spacer(Modifier.height(12.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Artwork(
-                url = song?.thumbnail,
-                modifier = Modifier.size(62.dp),
-                shape = RoundedCornerShape(12.dp),
-            )
-            Spacer(Modifier.width(14.dp))
+            Box(modifier = Modifier.size(66.dp)) {
+                Artwork(
+                    url = song?.thumbnail,
+                    modifier = Modifier
+                        .size(62.dp)
+                        .align(Alignment.TopStart),
+                    shape = RoundedCornerShape(12.dp),
+                )
+                if (showVyoraBadge) {
+                    Image(
+                        painter = painterResource(R.drawable.vyora_logo),
+                        contentDescription = "Badge Logo VYORA",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(24.dp)
+                            .align(Alignment.BottomEnd)
+                            .clip(CircleShape)
+                            .border(2.dp, WarmSurfaceElevated, CircleShape),
+                    )
+                }
+            }
+            Spacer(Modifier.width(12.dp))
             Column(Modifier.weight(1f)) {
                 Text(
                     text = title,
